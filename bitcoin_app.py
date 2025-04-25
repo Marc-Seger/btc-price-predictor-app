@@ -65,23 +65,18 @@ df_plot = master_df_dashboard[price_cols].copy()
 if volume_col:
     df_plot['Volume'] = master_df_dashboard[volume_col]
 
-# === 3️⃣ Resample Timeframe ===
-if timeframe == "Weekly":
-    df_plot = df_plot.resample('W').agg({
+# === 3️⃣ Resample Timeframe Safely ===
+if timeframe in ["Weekly", "Monthly"]:
+    resample_rule = 'W' if timeframe == "Weekly" else 'M'
+    agg_dict = {
         price_cols[0]: 'first',
         price_cols[1]: 'max',
         price_cols[2]: 'min',
-        price_cols[3]: 'last',
-        'Volume': 'sum' if volume_col else 'first'
-    })
-elif timeframe == "Monthly":
-    df_plot = df_plot.resample('M').agg({
-        price_cols[0]: 'first',
-        price_cols[1]: 'max',
-        price_cols[2]: 'min',
-        price_cols[3]: 'last',
-        'Volume': 'sum' if volume_col else 'first'
-    })
+        price_cols[3]: 'last'
+    }
+    if volume_col:
+        agg_dict['Volume'] = 'sum'
+    df_plot = df_plot.resample(resample_rule).agg(agg_dict)
 
 # === 4️⃣ Setup Subplots ===
 rows = 1
@@ -134,11 +129,16 @@ if "RSI" in indicators:
         fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[rsi_col], name="RSI", line=dict(color='orange')), row=current_row, col=1)
         fig.update_yaxes(title_text="RSI", row=current_row, col=1, range=[0, 100])
 
-# === 8️⃣ MACD Subplot ===
+# === 8️⃣ MACD Subplot with BTC Fix ===
 if "MACD" in indicators:
     current_row += 1
-    macd_col = f'MACD_{prefix}'
-    signal_col = f'Signal_Line_{prefix}'
+    if prefix == "BTC-USD":
+        macd_col = 'MACD_BTC'
+        signal_col = 'Signal_Line_BTC'
+    else:
+        macd_col = f'MACD_{prefix}'
+        signal_col = f'Signal_Line_{prefix}'
+
     if macd_col in master_df_dashboard.columns and signal_col in master_df_dashboard.columns:
         fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[macd_col], name="MACD", line=dict(color='purple')), row=current_row, col=1)
         fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[signal_col], name="Signal", line=dict(color='gray', dash='dot')), row=current_row, col=1)
