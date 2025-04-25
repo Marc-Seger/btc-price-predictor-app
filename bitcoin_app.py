@@ -4,11 +4,19 @@ import numpy as np
 import plotly.graph_objects as go   # For dynamic charts
 import datetime
 
-# === 2️⃣ Load Data ===
-master_df_dashboard = pd.read_csv('data/master_df_dashboard.csv', parse_dates=['date'], index_col='date')
-google_trends = pd.read_csv('data/multiTimeline.csv', parse_dates=['date'], index_col='date')
-etf_flow = pd.read_csv('data/SPOT BTC ETF IN_OUT_FLOW.csv', parse_dates=['Date'], index_col='Date')
+# === Load Data ===
+# === Load master_df_dashboard ===
+master_df_dashboard = pd.read_csv('data/master_df_dashboard.csv', index_col=0, parse_dates=True)
 
+# === Load Google Trends ===
+google_trends = pd.read_csv('data/multiTimeline.csv', skiprows=1)
+google_trends.rename(columns={google_trends.columns[0]: 'Date', google_trends.columns[1]: 'GT_index_bitcoin'}, inplace=True)
+google_trends['Date'] = pd.to_datetime(google_trends['Date'])
+google_trends.set_index('Date', inplace=True)
+google_trends.ffill(inplace=True)
+
+# === Load ETF Flow ===
+etf_flow = pd.read_csv('data/SPOT BTC ETF IN_OUT_FLOW.csv', parse_dates=['Date'], index_col='Date')
 # --- Page Config ---
 st.set_page_config(page_title="Bitcoin Market Dashboard", page_icon="📊", layout="wide")
 
