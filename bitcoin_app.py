@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go   # For dynamic charts
 import datetime
+from plotly.subplots import make_subplots
 
 # === Load Data ===
 # === Load master_df_dashboard ===
@@ -50,7 +51,8 @@ asset_choice = st.selectbox("Select Asset:", list(asset_options.keys()))
 chart_type = st.radio("Chart Type:", ["Line Chart", "Candlestick"])
 timeframe = st.selectbox("Candle Timeframe:", ["Daily", "Weekly", "Monthly"])
 indicators = st.multiselect("Select Indicators:", [
-    "SMA_20", "SMA_50", "EMA_20", "EMA_50", 
+    "SMA_9", "SMA_20", "SMA_50", "SMA_200",
+    "EMA_9", "EMA_20", "EMA_50", "EMA_200",
     "Bollinger Bands", "RSI", "MACD"
 ])
 
@@ -81,10 +83,19 @@ elif timeframe == "Monthly":
         'Volume': 'sum' if volume_col else 'first'
     })
 
-# === 4️⃣ Create Plotly Figure ===
-fig = go.Figure()
+# === 4️⃣ Setup Subplots ===
+rows = 1
+if "RSI" in indicators:
+    rows += 1
+if "MACD" in indicators:
+    rows += 1
 
-# Main Price Chart
+fig = make_subplots(rows=rows, shared_xaxes=True, vertical_spacing=0.02,
+                    row_heights=[0.6] + [0.2]*(rows-1))
+
+current_row = 1
+
+# === 5️⃣ Main Price Chart ===
 if chart_type == "Candlestick":
     fig.add_trace(go.Candlestick(
         x=df_plot.index,
@@ -93,74 +104,55 @@ if chart_type == "Candlestick":
         low=df_plot[price_cols[2]],
         close=df_plot[price_cols[3]],
         name="Price"
-    ))
+    ), row=current_row, col=1)
 else:
     fig.add_trace(go.Scatter(
         x=df_plot.index,
         y=df_plot[price_cols[3]],
         mode='lines',
         name='Close Price'
-    ))
+    ), row=current_row, col=1)
 
-# === 5️⃣ Add Indicators (Overlays or Secondary Y-Axis) ===
+# === 6️⃣ Overlay Indicators ===
+for ind in indicators:
+    if ind.startswith("SMA") or ind.startswith("EMA"):
+        col_name = f"{ind}_Close_{prefix}"
+        if col_name in master_df_dashboard.columns:
+            fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[col_name], name=ind), row=1, col=1)
+    if ind == "Bollinger Bands":
+        upper = f'Upper_Band_Close_{prefix}'
+        lower = f'Lower_Band_Close_{prefix}'
+        if upper in master_df_dashboard.columns and lower in master_df_dashboard.columns:
+            fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[upper], name='Upper Band', line=dict(dash='dot')), row=1, col=1)
+            fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[lower], name='Lower Band', line=dict(dash='dot')), row=1, col=1)
 
-# Overlay indicators
-if "SMA_20" in indicators:
-    col = f'SMA_20_Close_{prefix}'
-    if col in master_df_dashboard.columns:
-        fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[col], name='SMA 20'))
-
-if "SMA_50" in indicators:
-    col = f'SMA_50_Close_{prefix}'
-    if col in master_df_dashboard.columns:
-        fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[col], name='SMA 50'))
-
-if "EMA_20" in indicators:
-    col = f'EMA_20_Close_{prefix}'
-    if col in master_df_dashboard.columns:
-        fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[col], name='EMA 20'))
-
-if "EMA_50" in indicators:
-    col = f'EMA_50_Close_{prefix}'
-    if col in master_df_dashboard.columns:
-        fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[col], name='EMA 50'))
-
-if "Bollinger Bands" in indicators:
-    upper = f'Upper_Band_Close_{prefix}'
-    lower = f'Lower_Band_Close_{prefix}'
-    if upper in master_df_dashboard.columns and lower in master_df_dashboard.columns:
-        fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[upper], name='Upper Band', line=dict(dash='dot')))
-        fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[lower], name='Lower Band', line=dict(dash='dot')))
-
-# RSI on secondary y-axis
+# === 7️⃣ RSI Subplot ===
 if "RSI" in indicators:
+    current_row += 1
     rsi_col = f'RSI_Close_{prefix}'
     if rsi_col in master_df_dashboard.columns:
-        fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[rsi_col],
-                                 name="RSI", yaxis='y2', line=dict(color='orange', dash='dash')))
+        fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[rsi_col], name="RSI", line=dict(color='orange')), row=current_row, col=1)
+        fig.update_yaxes(title_text="RSI", row=current_row, col=1, range=[0, 100])
 
-# MACD on secondary y-axis
+# === 8️⃣ MACD Subplot ===
 if "MACD" in indicators:
+    current_row += 1
     macd_col = f'MACD_{prefix}'
     signal_col = f'Signal_Line_{prefix}'
     if macd_col in master_df_dashboard.columns and signal_col in master_df_dashboard.columns:
-        fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[macd_col],
-                                 name="MACD", yaxis='y2', line=dict(color='purple')))
-        fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[signal_col],
-                                 name="Signal", yaxis='y2', line=dict(color='gray', dash='dot')))
+        fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[macd_col], name="MACD", line=dict(color='purple')), row=current_row, col=1)
+        fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[signal_col], name="Signal", line=dict(color='gray', dash='dot')), row=current_row, col=1)
+        fig.update_yaxes(title_text="MACD", row=current_row, col=1)
 
-# === 6️⃣ Layout Settings ===
+# === 9️⃣ Layout Settings ===
 fig.update_layout(
     title=f"{asset_choice} Price Chart",
-    xaxis_title="Date",
-    yaxis_title="Price",
-    height=700,
+    height=300 + rows * 200,
     xaxis_rangeslider_visible=False,
-    yaxis=dict(title='Price'),
-    yaxis2=dict(title='Indicators', overlaying='y', side='right', showgrid=False),
+    showlegend=True
 )
 
-# === 7️⃣ Display Chart with Scroll Zoom Enabled ===
+# === 🔟 Display Chart ===
 st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True})
 
 st.markdown("---")
