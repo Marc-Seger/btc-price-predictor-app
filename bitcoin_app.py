@@ -4,6 +4,11 @@ import numpy as np
 import plotly.graph_objects as go   # For dynamic charts
 import datetime
 
+# === 2️⃣ Load Data ===
+master_df_dashboard = pd.read_csv('data/master_df_dashboard.csv', parse_dates=['date'], index_col='date')
+google_trends = pd.read_csv('data/multiTimeline.csv', parse_dates=['date'], index_col='date')
+etf_flow = pd.read_csv('data/SPOT BTC ETF IN_OUT_FLOW.csv', parse_dates=['Date'], index_col='Date')
+
 # --- Page Config ---
 st.set_page_config(page_title="Bitcoin Market Dashboard", page_icon="📊", layout="wide")
 
