@@ -114,7 +114,7 @@ if "Bollinger Bands" in indicators:
 fig.update_layout(title=f"{asset_choice} Price Chart", xaxis_title="Date", yaxis_title="Price", height=600)
 
 # === 5️⃣ Display Chart ===
-st.plotly_chart(fig, use_container_width=True
+st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("---")
 
