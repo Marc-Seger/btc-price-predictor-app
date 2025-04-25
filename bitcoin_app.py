@@ -37,14 +37,84 @@ st.markdown("---")
 # --- Main Chart Section ---
 st.subheader("🗺️ Asset Chart")
 
-# Chart Controls
-asset = st.selectbox("Select Asset:", ["Bitcoin", "S&P 500", "Nasdaq", "Gold", "DXY"])
-chart_type = st.radio("Chart Type:", ["Line Chart", "Candlestick"])
-indicators = st.multiselect("Indicators:", ["SMA", "EMA", "RSI", "MACD", "Bollinger Bands"])
-timeframe = st.selectbox("Timeframe:", ["Daily", "Weekly", "Monthly"])
+# === 1️⃣ Chart Controls ===
+asset_options = {
+    "Bitcoin": "BTC-USD",
+    "S&P 500": "SP500",
+    "Nasdaq": "NASDAQ",
+    "Gold": "Gold",
+    "DXY": "DXY"
+}
 
-# Chart Placeholder
-st.info("📍 Chart will be displayed here with selected options. (Coming Soon)")
+asset_choice = st.selectbox("Select Asset:", list(asset_options.keys()))
+chart_type = st.radio("Chart Type:", ["Line Chart", "Candlestick"])
+indicators = st.multiselect("Select Indicators:", ["SMA_20", "EMA_20", "Bollinger Bands"])
+
+# === 2️⃣ Filter Data ===
+prefix = asset_options[asset_choice]
+
+price_cols = [f'Open_{prefix}', f'High_{prefix}', f'Low_{prefix}', f'Close_{prefix}']
+
+# Check if asset has volume (DXY doesn't)
+volume_col = f'Volume_{prefix}' if f'Volume_{prefix}' in master_df_dashboard.columns else None
+
+df_plot = master_df_dashboard[price_cols].copy()
+if volume_col:
+    df_plot['Volume'] = master_df_dashboard[volume_col]
+
+# === 3️⃣ Create Plotly Figure ===
+fig = go.Figure()
+
+if chart_type == "Candlestick":
+    fig.add_trace(go.Candlestick(
+        x=df_plot.index,
+        open=df_plot[price_cols[0]],
+        high=df_plot[price_cols[1]],
+        low=df_plot[price_cols[2]],
+        close=df_plot[price_cols[3]],
+        name="Price"
+    ))
+else:
+    fig.add_trace(go.Scatter(
+        x=df_plot.index,
+        y=df_plot[price_cols[3]],
+        mode='lines',
+        name='Close Price'
+    ))
+
+# === 4️⃣ Add Indicators ===
+if "SMA_20" in indicators:
+    sma_col = f'SMA_20_Close_{prefix}'
+    if sma_col in master_df_dashboard.columns:
+        fig.add_trace(go.Scatter(
+            x=master_df_dashboard.index,
+            y=master_df_dashboard[sma_col],
+            mode='lines',
+            name='SMA 20'
+        ))
+
+if "EMA_20" in indicators:
+    ema_col = f'EMA_20_Close_{prefix}'
+    if ema_col in master_df_dashboard.columns:
+        fig.add_trace(go.Scatter(
+            x=master_df_dashboard.index,
+            y=master_df_dashboard[ema_col],
+            mode='lines',
+            name='EMA 20'
+        ))
+
+if "Bollinger Bands" in indicators:
+    upper = f'Upper_Band_Close_{prefix}'
+    lower = f'Lower_Band_Close_{prefix}'
+    if upper in master_df_dashboard.columns and lower in master_df_dashboard.columns:
+        fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[upper], name='Upper Band', line=dict(dash='dot')))
+        fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[lower], name='Lower Band', line=dict(dash='dot')))
+
+# Layout tweaks
+fig.update_layout(title=f"{asset_choice} Price Chart", xaxis_title="Date", yaxis_title="Price", height=600)
+
+# === 5️⃣ Display Chart ===
+st.plotly_chart(fig, use_container_width=True
 
 st.markdown("---")
 
