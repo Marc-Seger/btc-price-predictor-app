@@ -17,7 +17,7 @@ google_trends.set_index('Date', inplace=True)
 google_trends.ffill(inplace=True)
 
 # === Load ETF Flow ===
-etf_flow = pd.read_csv('data/SPOT BTC ETF IN_OUT_FLOW.csv', parse_dates=['Date'], index_col='Date')
+etf_flow = pd.read_csv('data/ETF_Flow_Cleaned.csv', parse_dates=['Date'], index_col='Date')
 # --- Page Config ---
 st.set_page_config(page_title="Bitcoin Market Dashboard", page_icon="📊", layout="wide")
 
