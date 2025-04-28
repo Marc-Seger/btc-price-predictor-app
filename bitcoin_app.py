@@ -183,7 +183,19 @@ fig_etf.update_layout(
     xaxis_title="Date",
     yaxis_title="Net Flow (US$M)",
     showlegend=False,
-    height=400
+    height=400,
+    xaxis=dict(
+        rangeselector=dict(
+            buttons=list([
+                dict(count=7, label="7d", step="day", stepmode="backward"),
+                dict(count=14, label="14d", step="day", stepmode="backward"),
+                dict(count=30, label="1m", step="day", stepmode="backward"),
+                dict(step="all", label="All")
+            ])
+        ),
+        rangeslider=dict(visible=True),
+        type="date"
+    )
 )
 
 st.plotly_chart(fig_etf, use_container_width=True)
@@ -203,7 +215,19 @@ fig_cum.update_layout(
     title="Cumulative Spot BTC ETF Flows",
     xaxis_title="Date",
     yaxis_title="Cumulative Flow (US$M)",
-    height=300
+    height=300,
+    xaxis=dict(
+        rangeselector=dict(
+            buttons=list([
+                dict(count=7, label="7d", step="day", stepmode="backward"),
+                dict(count=14, label="14d", step="day", stepmode="backward"),
+                dict(count=30, label="1m", step="day", stepmode="backward"),
+                dict(step="all", label="All")
+            ])
+        ),
+        rangeslider=dict(visible=True),
+        type="date"
+    )
 )
 
 st.plotly_chart(fig_cum, use_container_width=True)
