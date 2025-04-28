@@ -162,27 +162,26 @@ st.markdown("---")
 # =========================================
 st.subheader("📊 Spot Bitcoin ETF Inflows/Outflows")
 
-# --- Make sure the index is datetime ---
+# --- Ensure Clean Data ---
 etf_flow = etf_flow.copy()
 etf_flow.index = pd.to_datetime(etf_flow.index, errors='coerce')
-
-# --- Daily Net Flow from 'Total' column ---
 net_flow = pd.to_numeric(etf_flow['Total'], errors='coerce')
 
-# --- Bar Chart of Daily Net Flows ---
+# --- Bar Chart: Daily Net Flows (US$M) ---
 fig_etf = go.Figure()
 
 fig_etf.add_trace(go.Bar(
     x=net_flow.index,
     y=net_flow,
     marker_color=['green' if val >= 0 else 'red' for val in net_flow],
+    hovertemplate='%{y:.1f} M USD on %{x|%b %d, %Y}<extra></extra>',
     name='Daily Net Flow'
 ))
 
 fig_etf.update_layout(
-    title="Daily Net Flows of Spot BTC ETFs (All Funds)",
+    title="Daily Net Flows of Spot BTC ETFs",
     xaxis_title="Date",
-    yaxis_title="Net Flow (USD)",
+    yaxis_title="Net Flow (US$M)",
     showlegend=False,
     height=400
 )
@@ -191,14 +190,30 @@ st.plotly_chart(fig_etf, use_container_width=True)
 
 # --- Cumulative Flow Line Chart ---
 cumulative_flow = net_flow.cumsum()
-st.line_chart(cumulative_flow, height=300)
+
+fig_cum = go.Figure()
+fig_cum.add_trace(go.Scatter(
+    x=net_flow.index,
+    y=cumulative_flow,
+    mode='lines+markers',
+    name='Cumulative Flow'
+))
+
+fig_cum.update_layout(
+    title="Cumulative Spot BTC ETF Flows",
+    xaxis_title="Date",
+    yaxis_title="Cumulative Flow (US$M)",
+    height=300
+)
+
+st.plotly_chart(fig_cum, use_container_width=True)
 
 # --- Latest Stats ---
 latest_val = net_flow.iloc[-1]
 total_flow = cumulative_flow.iloc[-1]
 
-st.info(f"**Latest Net Flow:** {'+' if latest_val >=0 else ''}{latest_val:,.0f} USD")
-st.success(f"**Total Cumulative Flow:** {total_flow:,.0f} USD")
+st.info(f"**Latest Net Flow:** {'+' if latest_val >=0 else ''}{latest_val:,.1f} M USD")
+st.success(f"**Total Cumulative Flow:** {total_flow:,.1f} M USD")
 
 st.markdown("---")
 
