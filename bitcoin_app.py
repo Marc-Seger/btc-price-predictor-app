@@ -193,7 +193,6 @@ fig_etf.update_layout(
                 dict(step="all", label="All")
             ])
         ),
-        rangeslider=dict(visible=True),
         type="date"
     )
 )
@@ -225,7 +224,6 @@ fig_cum.update_layout(
                 dict(step="all", label="All")
             ])
         ),
-        rangeslider=dict(visible=True),
         type="date"
     )
 )
