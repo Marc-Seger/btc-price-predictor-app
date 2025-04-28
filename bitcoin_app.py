@@ -168,7 +168,9 @@ etf_flow.index = pd.to_datetime(etf_flow.index, errors='coerce')
 net_flow = pd.to_numeric(etf_flow['Total'], errors='coerce')
 cumulative_flow = net_flow.cumsum()
 
-# --- Bar Chart: Daily Net Flows (US$M) ---
+# ====================================
+# 📅 Bar Chart: Daily Net Flows (US$M)
+# ====================================
 fig_etf = go.Figure()
 
 fig_etf.add_trace(go.Bar(
@@ -186,24 +188,38 @@ fig_etf.update_layout(
     showlegend=False,
     height=400,
     xaxis=dict(
-        rangeselector=dict(
-            buttons=list([
-                dict(count=7, label="7d", step="day", stepmode="backward"),
-                dict(count=14, label="14d", step="day", stepmode="backward"),
-                dict(count=30, label="1m", step="day", stepmode="backward"),
-                dict(step="all", label="All")
-            ])
-        ),
+        rangeslider=dict(visible=False),
         type="date"
-    )
+    ),
+    template="plotly_dark"
 )
 
 st.plotly_chart(fig_etf, use_container_width=True)
 
-# --- Cumulative Flow Line Chart ---
+# =====================================================
+# 📈 Cumulative Flow Line Chart with Dynamic Dropdown
+# =====================================================
+range_option = st.selectbox(
+    "📅 Select Date Range for Cumulative ETF Flow:",
+    options=["7 Days", "14 Days", "30 Days", "3 Months", "6 Months", "All"],
+    index=2  # Default to "30 Days"
+)
+
 last_date = cumulative_flow.index.max()
 
-# Create the figure
+if range_option == "7 Days":
+    start_date = last_date - pd.Timedelta(days=7)
+elif range_option == "14 Days":
+    start_date = last_date - pd.Timedelta(days=14)
+elif range_option == "30 Days":
+    start_date = last_date - pd.Timedelta(days=30)
+elif range_option == "3 Months":
+    start_date = last_date - pd.DateOffset(months=3)
+elif range_option == "6 Months":
+    start_date = last_date - pd.DateOffset(months=6)
+else:  # "All"
+    start_date = cumulative_flow.index.min()
+
 fig_cumulative = go.Figure()
 
 fig_cumulative.add_trace(go.Scatter(
@@ -220,35 +236,18 @@ fig_cumulative.update_layout(
     yaxis_title="Cumulative Flow (US$m)",
     template="plotly_dark",
     xaxis=dict(
-        rangeselector=dict(
-            buttons=list([
-                dict(count=7,
-                     label="7d",
-                     step="day",
-                     stepmode="backward"),
-                dict(count=14,
-                     label="14d",
-                     step="day",
-                     stepmode="backward"),
-                dict(count=1,
-                     label="1m",
-                     step="month",
-                     stepmode="backward"),
-                dict(step="all", label="All")
-            ])
-        ),
         rangeslider=dict(visible=False),
         type="date"
     )
 )
 
-# Force initial view to last 30 days (you can adjust if you prefer "all")
-fig_cumulative.update_xaxes(range=[last_date - pd.Timedelta(days=30), last_date])
+fig_cumulative.update_xaxes(range=[start_date, last_date])
 
-# Display in Streamlit
 st.plotly_chart(fig_cumulative, use_container_width=True)
 
-# --- Latest Stats ---
+# ======================
+# 📢 Latest Stats Summary
+# ======================
 latest_val = net_flow.iloc[-1]
 total_flow = cumulative_flow.iloc[-1]
 
