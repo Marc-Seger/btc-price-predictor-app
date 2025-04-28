@@ -267,9 +267,6 @@ with col_sig2:
     st.markdown("**😨 Fear & Greed Index (Last 7 Days)**")
     st.line_chart([60, 65, 70, 68, 72, 75, 72])  # Placeholder data
 
-    st.markdown("**💰 Bitcoin ETF Inflows/Outflows**")
-    st.bar_chart([100, -50, 200, -30, 180])  # Placeholder data
-
     st.markdown("**🔎 Google Trends: 'Bitcoin'**")
     st.line_chart([40, 45, 60, 55, 70, 65, 68])  # Placeholder data
 
