@@ -199,32 +199,32 @@ st.plotly_chart(fig_etf, use_container_width=True)
 # =====================================================
 # 📈 Cumulative Flow Line Chart with Dynamic Dropdown
 # =====================================================
+
+# --- Convert Cumulative Flow to Billions ---
+cumulative_flow_billion = cumulative_flow / 1000  # Convert M to B
+
+# Dropdown for dynamic range selection
 range_option = st.selectbox(
-    "📅 Select Date Range for Cumulative ETF Flow:",
-    options=["7 Days", "14 Days", "30 Days", "3 Months", "6 Months", "All"],
-    index=2  # Default to "30 Days"
+    "Select Time Range:",
+    options=["7d", "14d", "1m", "3m", "6m", "All"],
+    index=2  # Default to "1m"
 )
 
-last_date = cumulative_flow.index.max()
+# Calculate date range based on selection
+if range_option != "All":
+    days_map = {"7d": 7, "14d": 14, "1m": 30, "3m": 90, "6m": 180}
+    days = days_map[range_option]
+    start_date = cumulative_flow.index.max() - pd.Timedelta(days=days)
+    filtered_cumul = cumulative_flow_billion[cumulative_flow.index >= start_date]
+else:
+    filtered_cumul = cumulative_flow_billion
 
-if range_option == "7 Days":
-    start_date = last_date - pd.Timedelta(days=7)
-elif range_option == "14 Days":
-    start_date = last_date - pd.Timedelta(days=14)
-elif range_option == "30 Days":
-    start_date = last_date - pd.Timedelta(days=30)
-elif range_option == "3 Months":
-    start_date = last_date - pd.DateOffset(months=3)
-elif range_option == "6 Months":
-    start_date = last_date - pd.DateOffset(months=6)
-else:  # "All"
-    start_date = cumulative_flow.index.min()
-
+# Plotly Figure
 fig_cumulative = go.Figure()
 
 fig_cumulative.add_trace(go.Scatter(
-    x=cumulative_flow.index,
-    y=cumulative_flow.values,
+    x=filtered_cumul.index,
+    y=filtered_cumul.values,
     mode='lines+markers',
     name='Cumulative Flow',
     line=dict(color='lightskyblue')
@@ -233,15 +233,10 @@ fig_cumulative.add_trace(go.Scatter(
 fig_cumulative.update_layout(
     title="Cumulative Spot BTC ETF Flows",
     xaxis_title="Date",
-    yaxis_title="Cumulative Flow (US$m)",
+    yaxis_title="Cumulative Flow (US$B)",
     template="plotly_dark",
-    xaxis=dict(
-        rangeslider=dict(visible=False),
-        type="date"
-    )
+    yaxis=dict(autorange=True)  # Dynamically adjust Y-axis
 )
-
-fig_cumulative.update_xaxes(range=[start_date, last_date])
 
 st.plotly_chart(fig_cumulative, use_container_width=True)
 
