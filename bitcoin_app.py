@@ -35,6 +35,25 @@ col4.metric("24h Volume Spike", "Yes", "🚨")
 
 st.markdown("---")
 
+# =========================================
+# 🤖 Bitcoin Price Predictor (Coming Soon)
+# =========================================
+st.subheader("🤖 Bitcoin Price Predictor")
+
+st.markdown("Select a future date to predict Bitcoin's price. This feature is under development.")
+
+col1, col2 = st.columns([3,1])
+
+with col1:
+    future_date = st.date_input("Select Prediction Date", value=pd.Timestamp.today() + pd.Timedelta(days=7))
+
+with col2:
+    st.button("🔒 Predict", disabled=True)
+
+st.warning("🚧 This feature is a Work In Progress. Stay tuned!")
+
+st.markdown("---")
+
 # --- Main Chart Section ---
 st.subheader("🗺️ Asset Chart")
 
@@ -252,9 +271,13 @@ st.success(f"**Total Cumulative Flow:** {total_flow_billion:,.2f} B USD")
 st.markdown("---")
 
 # =========================================
-# 🚨 Signals & Insights (Master DF Version)
+# 🚨 Signals & Insights
 # =========================================
 st.subheader("🚨 Signals & Insights")
+
+# --- Overall Market Sentiment Placeholder ---
+# This will be recalculated below
+overall_sentiment_placeholder = st.empty()
 
 # --- Define Asset Prefixes ---
 asset_prefixes = {
@@ -271,32 +294,15 @@ def get_asset_data(asset_key):
     cols = [col for col in master_df_dashboard.columns if f"_{prefix}" in col or col.startswith(f"{prefix}")]
     return master_df_dashboard[cols].copy()
 
-# --- Helper to Generate Signal Summary ---
-def generate_signal_summary(df, prefix):
-    signals = []
-
-    if f'SMA_50_Close_{prefix}' in df.columns and f'SMA_200_Close_{prefix}' in df.columns:
-        if df[f'SMA_50_Close_{prefix}'].iloc[-1] > df[f'SMA_200_Close_{prefix}'].iloc[-1]:
-            signals.append("🟢 Golden Cross")
-        else:
-            signals.append("🔴 Death Cross")
-
-    if f'Upper_Band_Close_{prefix}' in df.columns:
-        price = df[f'Close_{prefix}'].iloc[-1]
-        upper = df[f'Upper_Band_Close_{prefix}'].iloc[-1]
-        lower = df[f'Lower_Band_Close_{prefix}'].iloc[-1]
-        if price > upper:
-            signals.append("📈 Above Upper Band")
-        elif price < lower:
-            signals.append("📉 Below Lower Band")
-
-    if f'MACD_Above_Signal_{prefix}' in df.columns:
-        momentum = "⚡ Bullish Momentum" if df[f'MACD_Above_Signal_{prefix}'].iloc[-1] == 1 else "⚡ Bearish Momentum"
-        signals.append(momentum)
-
-    if not signals:
-        return "⚠️ No significant signals"
-    return "; ".join(signals)
+# --- Helper to Find Last Crossover Date ---
+def find_crossover_date(df, prefix):
+    sma50 = df[f'SMA_50_Close_{prefix}']
+    sma200 = df[f'SMA_200_Close_{prefix}']
+    crossover = (sma50 > sma200).astype(int).diff()
+    last_cross = crossover[crossover != 0].last_valid_index()
+    if pd.isna(last_cross):
+        return "No recent crossover"
+    return last_cross.strftime('%Y-%m-%d')
 
 # --- Generate Signal Data ---
 summary_data = {"Asset": [], "Signal Summary": []}
@@ -304,52 +310,58 @@ detailed_data = []
 
 for asset_key, prefix in asset_prefixes.items():
     df = get_asset_data(asset_key)
-    summary = generate_signal_summary(df, prefix)
-    summary_data["Asset"].append(asset_key)
-    summary_data["Signal Summary"].append(summary)
+    signals = []
 
-    # Detailed signals
+    # Moving Average Signal
     if f'SMA_50_Close_{prefix}' in df.columns:
         ma_signal = "Golden Cross" if df[f'SMA_50_Close_{prefix}'].iloc[-1] > df[f'SMA_200_Close_{prefix}'].iloc[-1] else "Death Cross"
-        detailed_data.append([asset_key, "Moving Averages", ma_signal])
+        cross_date = find_crossover_date(df, prefix)
+        signals.append(f"{ma_signal} ({cross_date})")
+        detailed_data.append([asset_key, "Moving Averages", ma_signal, cross_date])
 
+    # Bollinger Bands
     if f'Upper_Band_Close_{prefix}' in df.columns:
         price = df[f'Close_{prefix}'].iloc[-1]
         upper = df[f'Upper_Band_Close_{prefix}'].iloc[-1]
         lower = df[f'Lower_Band_Close_{prefix}'].iloc[-1]
-        if price > upper:
-            bb_signal = "Above Upper Band"
-        elif price < lower:
-            bb_signal = "Below Lower Band"
-        else:
-            bb_signal = "Within Bands"
-        detailed_data.append([asset_key, "Bollinger Bands", bb_signal])
+        bb_signal = "Above Upper Band" if price > upper else "Below Lower Band" if price < lower else "Within Bands"
+        signals.append(bb_signal)
+        detailed_data.append([asset_key, "Bollinger Bands", bb_signal, df.index[-1].strftime('%Y-%m-%d')])
 
+    # Momentum
     if f'MACD_Above_Signal_{prefix}' in df.columns:
         momentum_signal = "Bullish" if df[f'MACD_Above_Signal_{prefix}'].iloc[-1] == 1 else "Bearish"
-        detailed_data.append([asset_key, "Momentum", momentum_signal])
+        signals.append(f"Momentum: {momentum_signal}")
+        detailed_data.append([asset_key, "Momentum", momentum_signal, df.index[-1].strftime('%Y-%m-%d')])
 
-# --- Display Quick Summary ---
+    if not signals:
+        summary_data["Signal Summary"].append("⚠️ No significant signals")
+    else:
+        summary_data["Signal Summary"].append("; ".join(signals))
+    summary_data["Asset"].append(asset_key)
+
+# --- Quick Summary Table ---
 st.markdown("### 📊 Technical Signals Summary")
 st.dataframe(pd.DataFrame(summary_data), hide_index=True)
 
-# --- Interactive Signal Explorer ---
-st.markdown("### 🎛️ Explore Detailed Signals")
+# --- Interactive Detailed Signals ---
+st.markdown("### Explore Detailed Signals")
 
-asset_options = ["All"] + list(asset_prefixes.keys())
-signal_types = ["All", "Moving Averages", "Bollinger Bands", "Momentum"]
+asset_options = ["None"] + list(asset_prefixes.keys())
+signal_types = ["None", "Moving Averages", "Bollinger Bands", "Momentum"]
 
 selected_asset = st.selectbox("Select Asset", asset_options)
 selected_signal = st.selectbox("Select Signal Type", signal_types)
 
-detailed_df = pd.DataFrame(detailed_data, columns=["Asset", "Signal Type", "Status"])
+detailed_df = pd.DataFrame(detailed_data, columns=["Asset", "Signal Type", "Status", "Date"])
 
-if selected_asset != "All":
+if selected_asset != "None":
     detailed_df = detailed_df[detailed_df["Asset"] == selected_asset]
-if selected_signal != "All":
+if selected_signal != "None":
     detailed_df = detailed_df[detailed_df["Signal Type"] == selected_signal]
 
-st.dataframe(detailed_df, hide_index=True)
+if selected_asset != "None" or selected_signal != "None":
+    st.dataframe(detailed_df, hide_index=True)
 
 # --- Volume Breakout Alerts ---
 st.markdown("### 🚨 Volume Breakout Alerts (>150% Avg Volume)")
@@ -361,24 +373,25 @@ for asset_key, prefix in asset_prefixes.items():
         df = get_asset_data(asset_key)
         avg_vol = df[vol_col].rolling(window=20).mean().iloc[-1]
         current_vol = df[vol_col].iloc[-1]
+        vol_date = df.index[-1].strftime('%Y-%m-%d')
         if current_vol > 1.5 * avg_vol:
-            volume_alerts.append([asset_key, f"{current_vol:,.0f}", f"{avg_vol:,.0f}", "⚡ Breakout"])
+            volume_alerts.append([asset_key, f"{current_vol:,.0f} ({vol_date})", f"{avg_vol:,.0f}", "⚡ Breakout"])
         else:
-            volume_alerts.append([asset_key, f"{current_vol:,.0f}", f"{avg_vol:,.0f}", "No Signal"])
+            volume_alerts.append([asset_key, f"{current_vol:,.0f} ({vol_date})", f"{avg_vol:,.0f}", "No Signal"])
 
 vol_df = pd.DataFrame(volume_alerts, columns=["Asset", "Current Volume", "20D Avg Volume", "Signal"])
 st.dataframe(vol_df, hide_index=True)
 
-# --- General Sentiment ---
-bullish_assets = detailed_df[detailed_df['Status'].str.contains("Bullish")]
-bearish_assets = detailed_df[detailed_df['Status'].str.contains("Bearish")]
+# --- Calculate Overall Sentiment ---
+bullish_count = detailed_df[detailed_df['Status'].str.contains("Bullish")].shape[0]
+bearish_count = detailed_df[detailed_df['Status'].str.contains("Bearish")].shape[0]
 
-if len(bullish_assets) > len(bearish_assets):
-    st.success(f"📢 Overall Market Sentiment: **Bullish Bias** ({len(bullish_assets)} bullish signals)")
-elif len(bearish_assets) > len(bullish_assets):
-    st.error(f"📢 Overall Market Sentiment: **Bearish Bias** ({len(bearish_assets)} bearish signals)")
+if bullish_count > bearish_count:
+    overall_sentiment_placeholder.success(f"📢 Overall Market Sentiment: **Bullish Bias** ({bullish_count} bullish signals)")
+elif bearish_count > bullish_count:
+    overall_sentiment_placeholder.error(f"📢 Overall Market Sentiment: **Bearish Bias** ({bearish_count} bearish signals)")
 else:
-    st.info("📢 Overall Market Sentiment: **Neutral**")
+    overall_sentiment_placeholder.info("📢 Overall Market Sentiment: **Neutral**")
 
 st.markdown("---")
 
