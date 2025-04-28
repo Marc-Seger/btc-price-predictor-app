@@ -167,7 +167,7 @@ etf_flow = etf_flow.copy()
 etf_flow.index = pd.to_datetime(etf_flow.index, errors='coerce')
 
 # --- Daily Net Flow from 'Total' column ---
-net_flow = etf_flow['Total']
+net_flow = pd.to_numeric(etf_flow['Total'], errors='coerce')
 
 # --- Bar Chart of Daily Net Flows ---
 fig_etf = go.Figure()
