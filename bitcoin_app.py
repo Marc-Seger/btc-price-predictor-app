@@ -251,53 +251,91 @@ st.success(f"**Total Cumulative Flow:** {total_flow_billion:,.2f} B USD")
 
 st.markdown("---")
 
-# =====================================
-# 🚨 Signals & Insights (Live Data)
-# =====================================
+# =========================================
+# 🚨 Signals & Insights
+# =========================================
 st.subheader("🚨 Signals & Insights")
 
-# --- Prepare Signals from Latest Data ---
-latest_signals = master_df_dashboard.iloc[-1]  # Get the last available row
+# --- Extract Fear & Greed from master_df_dashboard ---
+fng_data = master_df_dashboard[['BTC_index_value', 'BTC_index_label']].dropna().sort_index()
 
-assets = ['BTC', 'SP500', 'NASDAQ', 'GOLD', 'DXY']
-volume_signals = []
-momentum_signals = []
+# --- Prepare Signal Summaries ---
+def generate_signal_summary(asset, df, prefix):
+    signals = []
 
-for asset in assets:
-    # Volume Breakout
-    vol_flag = latest_signals.get(f'High_Volume_{asset}', 0)
-    volume_signals.append("Breakout 🚀" if vol_flag == 1 else "Normal")
+    # Golden/Death Cross
+    if f'SMA_50_Close_{prefix}' in df.columns and f'SMA_200_Close_{prefix}' in df.columns:
+        if df[f'SMA_50_Close_{prefix}'].iloc[-1] > df[f'SMA_200_Close_{prefix}'].iloc[-1]:
+            signals.append("🟢 Golden Cross (Bullish Bias)")
+        else:
+            signals.append("🔴 Death Cross (Bearish Bias)")
 
-    # Momentum Flag (based on MACD + Price > SMA200)
-    macd_signal = latest_signals.get(f'MACD_Above_Signal_{asset}', 0)
-    sma_signal = latest_signals.get(f'Price_Above_SMA200_{asset}', 0)
+    # Bollinger Band Breakout
+    if f'Upper_Band_Close_{prefix}' in df.columns:
+        price = df[f'Close_{prefix}'].iloc[-1]
+        upper = df[f'Upper_Band_Close_{prefix}'].iloc[-1]
+        lower = df[f'Lower_Band_Close_{prefix}'].iloc[-1]
 
-    if macd_signal and sma_signal:
-        momentum_signals.append("Bullish 📈")
-    elif not macd_signal and not sma_signal:
-        momentum_signals.append("Bearish 📉")
-    else:
-        momentum_signals.append("Neutral ➖")
+        if price > upper:
+            signals.append("📈 Price Above Upper Bollinger Band")
+        elif price < lower:
+            signals.append("📉 Price Below Lower Bollinger Band")
+        else:
+            signals.append("🔹 Price Within Bollinger Bands")
 
-# --- Display in Two Columns ---
-col_sig1, col_sig2 = st.columns(2)
+    # Momentum (MACD)
+    if f'MACD_Above_Signal_{prefix}' in df.columns:
+        momentum = "Bullish" if df[f'MACD_Above_Signal_{prefix}'].iloc[-1] == 1 else "Bearish"
+        signals.append(f"⚡ MACD Momentum: {momentum}")
 
-with col_sig1:
-    st.markdown("**📊 Volume Breakout Signals**")
-    vol_df = pd.DataFrame({'Asset': assets, 'Signal': volume_signals})
-    st.dataframe(vol_df, hide_index=True)
+    return "; ".join(signals)
 
-    st.markdown("**⚡ Momentum Flags**")
-    mom_df = pd.DataFrame({'Asset': assets, 'Momentum': momentum_signals})
-    st.dataframe(mom_df, hide_index=True)
 
-with col_sig2:
-    st.markdown("**😨 Bitcoin Fear & Greed Index (Last 14 Days)**")
-    btc_fng = master_df_dashboard[['BTC_index_value']].dropna().tail(14)
-    st.line_chart(btc_fng)
+# --- Assets to Monitor ---
+assets = {
+    "BTC": bitcoin_df,
+    "SP500": sp500_data,
+    "NASDAQ": nasdaq_data,
+    "GOLD": gold_df,
+    "DXY": dxy_data
+}
 
-    st.markdown("**🔎 Google Trends: 'Bitcoin' (Last 14 Days)**")
-    st.line_chart(google_trends.tail(14))
+signal_data = {"Asset": [], "Signals": []}
+for asset, dataframe in assets.items():
+    signal_data["Asset"].append(asset)
+    signal_data["Signals"].append(generate_signal_summary(asset, dataframe, asset))
+
+# =========================================
+# Layout: Signals & Sentiment Side by Side
+# =========================================
+st.markdown("### 📊 Technical Signals Summary & Sentiment Overview")
+
+col_sig, col_sent = st.columns(2)
+
+# --- Technical Signals Table ---
+with col_sig:
+    st.markdown("#### 🔧 Technical Signals")
+    st.dataframe(pd.DataFrame(signal_data), use_container_width=True)
+
+# --- Fear & Greed Chart ---
+with col_sent:
+    st.markdown("#### 😨 Bitcoin Fear & Greed Index (14D)")
+    st.line_chart(fng_data['BTC_index_value'].tail(14))
+
+# =========================================
+# Additional Sentiment Data
+# =========================================
+st.markdown("### 🔎 Market Sentiment & Trends")
+
+col_trend, col_etf = st.columns(2)
+
+with col_trend:
+    st.markdown("#### 📈 Google Trends: 'Bitcoin' (14D)")
+    st.line_chart(google_trends['GT_index_bitcoin'].tail(14))
+
+with col_etf:
+    st.markdown("#### 💰 Last 14 Days ETF Net Flows")
+    st.bar_chart(etf_flow['Total'].tail(14))
 
 st.markdown("---")
 
