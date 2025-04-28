@@ -244,10 +244,10 @@ st.plotly_chart(fig_cumulative, use_container_width=True)
 # 📢 Latest Stats Summary
 # ======================
 latest_val = net_flow.iloc[-1]
-total_flow = cumulative_flow.iloc[-1]
+total_flow_billion = cumulative_flow_billion.iloc[-1]
 
 st.info(f"**Latest Net Flow:** {'+' if latest_val >=0 else ''}{latest_val:,.1f} M USD")
-st.success(f"**Total Cumulative Flow:** {total_flow:,.1f} M USD")
+st.success(f"**Total Cumulative Flow:** {total_flow_billion:,.2f} B USD")
 
 st.markdown("---")
 
