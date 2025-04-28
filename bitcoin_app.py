@@ -292,18 +292,12 @@ def generate_signal_summary(asset, df, prefix):
 
 
 # --- Assets to Monitor ---
-assets = {
-    "BTC": bitcoin_df,
-    "SP500": sp500_data,
-    "NASDAQ": nasdaq_data,
-    "GOLD": gold_df,
-    "DXY": dxy_data
-}
+asset_prefixes = ["BTC", "SP500", "NASDAQ", "GOLD", "DXY"]
 
 signal_data = {"Asset": [], "Signals": []}
-for asset, dataframe in assets.items():
-    signal_data["Asset"].append(asset)
-    signal_data["Signals"].append(generate_signal_summary(asset, dataframe, asset))
+for prefix in asset_prefixes:
+    signal_data["Asset"].append(prefix)
+    signal_data["Signals"].append(generate_signal_summary(prefix, master_df_dashboard, prefix))
 
 # =========================================
 # Layout: Signals & Sentiment Side by Side
