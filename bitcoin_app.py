@@ -251,24 +251,53 @@ st.success(f"**Total Cumulative Flow:** {total_flow_billion:,.2f} B USD")
 
 st.markdown("---")
 
-# --- Signals & Insights ---
+# =====================================
+# 🚨 Signals & Insights (Live Data)
+# =====================================
 st.subheader("🚨 Signals & Insights")
 
+# --- Prepare Signals from Latest Data ---
+latest_signals = master_df_dashboard.iloc[-1]  # Get the last available row
+
+assets = ['BTC', 'SP500', 'NASDAQ', 'GOLD', 'DXY']
+volume_signals = []
+momentum_signals = []
+
+for asset in assets:
+    # Volume Breakout
+    vol_flag = latest_signals.get(f'High_Volume_{asset}', 0)
+    volume_signals.append("Breakout 🚀" if vol_flag == 1 else "Normal")
+
+    # Momentum Flag (based on MACD + Price > SMA200)
+    macd_signal = latest_signals.get(f'MACD_Above_Signal_{asset}', 0)
+    sma_signal = latest_signals.get(f'Price_Above_SMA200_{asset}', 0)
+
+    if macd_signal and sma_signal:
+        momentum_signals.append("Bullish 📈")
+    elif not macd_signal and not sma_signal:
+        momentum_signals.append("Bearish 📉")
+    else:
+        momentum_signals.append("Neutral ➖")
+
+# --- Display in Two Columns ---
 col_sig1, col_sig2 = st.columns(2)
 
 with col_sig1:
     st.markdown("**📊 Volume Breakout Signals**")
-    st.dataframe({"Asset": ["BTC", "Nasdaq"], "Signal": ["Breakout", "No Signal"]})
+    vol_df = pd.DataFrame({'Asset': assets, 'Signal': volume_signals})
+    st.dataframe(vol_df, hide_index=True)
 
     st.markdown("**⚡ Momentum Flags**")
-    st.dataframe({"Asset": ["BTC", "Gold"], "Momentum": ["Strong Up", "Weak Down"]})
+    mom_df = pd.DataFrame({'Asset': assets, 'Momentum': momentum_signals})
+    st.dataframe(mom_df, hide_index=True)
 
 with col_sig2:
-    st.markdown("**😨 Fear & Greed Index (Last 7 Days)**")
-    st.line_chart([60, 65, 70, 68, 72, 75, 72])  # Placeholder data
+    st.markdown("**😨 Bitcoin Fear & Greed Index (Last 14 Days)**")
+    btc_fng = master_df_dashboard[['BTC_index_value']].dropna().tail(14)
+    st.line_chart(btc_fng)
 
-    st.markdown("**🔎 Google Trends: 'Bitcoin'**")
-    st.line_chart([40, 45, 60, 55, 70, 65, 68])  # Placeholder data
+    st.markdown("**🔎 Google Trends: 'Bitcoin' (Last 14 Days)**")
+    st.line_chart(google_trends.tail(14))
 
 st.markdown("---")
 
