@@ -157,6 +157,50 @@ st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True})
 
 st.markdown("---")
 
+# =========================================
+# 📊 Spot Bitcoin ETF Flows Visualization
+# =========================================
+st.subheader("📊 Spot Bitcoin ETF Inflows/Outflows")
+
+# --- Make sure the index is datetime ---
+etf_flow.index = pd.to_datetime(etf_flow.index)
+
+# --- Daily Net Flow from 'Total' column ---
+net_flow = etf_flow['Total']
+
+# --- Bar Chart of Daily Net Flows ---
+fig_etf = go.Figure()
+
+fig_etf.add_trace(go.Bar(
+    x=net_flow.index,
+    y=net_flow,
+    marker_color=['green' if val >= 0 else 'red' for val in net_flow],
+    name='Daily Net Flow'
+))
+
+fig_etf.update_layout(
+    title="Daily Net Flows of Spot BTC ETFs (All Funds)",
+    xaxis_title="Date",
+    yaxis_title="Net Flow (USD)",
+    showlegend=False,
+    height=400
+)
+
+st.plotly_chart(fig_etf, use_container_width=True)
+
+# --- Cumulative Flow Line Chart ---
+cumulative_flow = net_flow.cumsum()
+st.line_chart(cumulative_flow, height=300)
+
+# --- Latest Stats ---
+latest_val = net_flow.iloc[-1]
+total_flow = cumulative_flow.iloc[-1]
+
+st.info(f"**Latest Net Flow:** {'+' if latest_val >=0 else ''}{latest_val:,.0f} USD")
+st.success(f"**Total Cumulative Flow:** {total_flow:,.0f} USD")
+
+st.markdown("---")
+
 # --- Signals & Insights ---
 st.subheader("🚨 Signals & Insights")
 
