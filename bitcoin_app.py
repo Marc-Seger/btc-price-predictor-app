@@ -383,15 +383,16 @@ vol_df = pd.DataFrame(volume_alerts, columns=["Asset", "Current Volume", "20D Av
 st.dataframe(vol_df, hide_index=True)
 
 # --- Calculate Overall Sentiment ---
+# --- Calculate Overall Sentiment ---
 bullish_count = detailed_df[detailed_df['Status'].str.contains("Bullish")].shape[0]
 bearish_count = detailed_df[detailed_df['Status'].str.contains("Bearish")].shape[0]
 
 if bullish_count > bearish_count:
-    overall_sentiment_placeholder.success(f"📢 Overall Market Sentiment: **Bullish Bias** ({bullish_count} bullish signals)")
+    overall_sentiment_placeholder.success(f"📢 Market Sentiment Based on Signals: **Bullish Bias** ({bullish_count} bullish signals)")
 elif bearish_count > bullish_count:
-    overall_sentiment_placeholder.error(f"📢 Overall Market Sentiment: **Bearish Bias** ({bearish_count} bearish signals)")
+    overall_sentiment_placeholder.error(f"📢 Market Sentiment Based on Signals: **Bearish Bias** ({bearish_count} bearish signals)")
 else:
-    overall_sentiment_placeholder.info("📢 Overall Market Sentiment: **Neutral**")
+    overall_sentiment_placeholder.info("📢 Market Sentiment Based on Signals: **Neutral**")
 
 st.markdown("---")
 
