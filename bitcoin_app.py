@@ -200,35 +200,56 @@ fig_etf.update_layout(
 st.plotly_chart(fig_etf, use_container_width=True)
 
 # --- Cumulative Flow Line Chart ---
-cumulative_flow = net_flow.cumsum()
+import plotly.graph_objects as go
+import pandas as pd
 
-fig_cum = go.Figure()
-fig_cum.add_trace(go.Scatter(
-    x=net_flow.index,
-    y=cumulative_flow,
+# Assuming 'cumulative_flow' is already defined
+last_date = cumulative_flow.index.max()
+
+# Create the figure
+fig_cumulative = go.Figure()
+
+fig_cumulative.add_trace(go.Scatter(
+    x=cumulative_flow.index,
+    y=cumulative_flow.values,
     mode='lines+markers',
-    name='Cumulative Flow'
+    name='Cumulative Flow',
+    line=dict(color='lightskyblue')
 ))
 
-fig_cum.update_layout(
+fig_cumulative.update_layout(
     title="Cumulative Spot BTC ETF Flows",
     xaxis_title="Date",
-    yaxis_title="Cumulative Flow (US$M)",
-    height=300,
+    yaxis_title="Cumulative Flow (US$m)",
+    template="plotly_dark",
     xaxis=dict(
         rangeselector=dict(
             buttons=list([
-                dict(count=7, label="7d", step="day", stepmode="backward"),
-                dict(count=14, label="14d", step="day", stepmode="backward"),
-                dict(count=30, label="1m", step="day", stepmode="backward"),
+                dict(count=7,
+                     label="7d",
+                     step="day",
+                     stepmode="backward"),
+                dict(count=14,
+                     label="14d",
+                     step="day",
+                     stepmode="backward"),
+                dict(count=1,
+                     label="1m",
+                     step="month",
+                     stepmode="backward"),
                 dict(step="all", label="All")
             ])
         ),
+        rangeslider=dict(visible=False),
         type="date"
     )
 )
 
-st.plotly_chart(fig_cum, use_container_width=True)
+# Force initial view to last 30 days (you can adjust if you prefer "all")
+fig_cumulative.update_xaxes(range=[last_date - pd.Timedelta(days=30), last_date])
+
+# Display in Streamlit
+st.plotly_chart(fig_cumulative, use_container_width=True)
 
 # --- Latest Stats ---
 latest_val = net_flow.iloc[-1]

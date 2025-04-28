@@ -1,0 +1,21 @@
+# macOS system files
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+
+# VS Code settings
+.vscode/
+
+# Jupyter / Colab
+*.ipynb_checkpoints
+
+# Logs
+*.log
