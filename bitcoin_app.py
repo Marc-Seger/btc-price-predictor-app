@@ -166,6 +166,7 @@ st.subheader("📊 Spot Bitcoin ETF Inflows/Outflows")
 etf_flow = etf_flow.copy()
 etf_flow.index = pd.to_datetime(etf_flow.index, errors='coerce')
 net_flow = pd.to_numeric(etf_flow['Total'], errors='coerce')
+cumulative_flow = net_flow.cumsum()
 
 # --- Bar Chart: Daily Net Flows (US$M) ---
 fig_etf = go.Figure()
@@ -200,10 +201,6 @@ fig_etf.update_layout(
 st.plotly_chart(fig_etf, use_container_width=True)
 
 # --- Cumulative Flow Line Chart ---
-import plotly.graph_objects as go
-import pandas as pd
-
-# Assuming 'cumulative_flow' is already defined
 last_date = cumulative_flow.index.max()
 
 # Create the figure
