@@ -293,98 +293,124 @@ def get_asset_data(asset_key):
     cols = [col for col in master_df_dashboard.columns if f"_{prefix}" in col or col.startswith(f"{prefix}")]
     return master_df_dashboard[cols].copy()
 
-# --- Define Priority Order (OUTSIDE the loop) ---
+# --- Define Priority Order ---
 priority_order = [
     "🟢 Golden Cross",
     "🔴 Death Cross",
-    "📈 Above Upper Bollinger Band",
-    "📉 Below Lower Bollinger Band",
-    "⚡ Bullish Momentum",
-    "⚡ Bearish Momentum",
-    "📈 Stochastic Overbought",
-    "📉 Stochastic Oversold",
-    "📈 RSI Overbought",
-    "📉 RSI Oversold",
-    "📈 Price Above VWAP",
-    "🚀 High Volume Breakout"
+    "🟢 Above Upper Bollinger Band",
+    "🟠 Within Bollinger Bands",
+    "🔴 Below Lower Bollinger Band",
+    "🟢 Bullish Momentum",
+    "🔴 Bearish Momentum",
+    "🟢 Stochastic Overbought",
+    "🔴 Stochastic Oversold",
+    "🟢 RSI Overbought",
+    "🔴 RSI Oversold",
+    "🟢 Price Above VWAP",
+    "🟢 High Volume Breakout"
 ]
 
-# --- Generate Signal Data from Precomputed Columns ---
-summary_data = {"Asset": [], "Signal Summary": []}
+# --- Generate Signal Data ---
+summary_data = {"Asset": [], "Signal Summary": [], "Interpretation": []}
 detailed_data = []
 
 for asset_key, prefix in asset_prefixes.items():
     df = get_asset_data(asset_key)
     signals = []
+    signal_dates = {}
 
-    # Moving Averages (Golden/Death Cross)
-    if f'Golden_Cross_{asset_key}' in df.columns and df[f'Golden_Cross_{asset_key}'].iloc[-1] == 1:
-        signals.append("🟢 Golden Cross")
-    elif f'Death_Cross_{asset_key}' in df.columns and df[f'Death_Cross_{asset_key}'].iloc[-1] == 1:
-        signals.append("🔴 Death Cross")
+    # Golden/Death Cross
+    if f'Golden_Cross_{asset_key}' in df.columns:
+        idx = df[f'Golden_Cross_{asset_key}'][df[f'Golden_Cross_{asset_key}'] == 1].last_valid_index()
+        if idx:
+            signals.append("🟢 Golden Cross")
+            signal_dates["🟢 Golden Cross"] = idx.strftime('%Y-%m-%d')
+    if f'Death_Cross_{asset_key}' in df.columns:
+        idx = df[f'Death_Cross_{asset_key}'][df[f'Death_Cross_{asset_key}'] == 1].last_valid_index()
+        if idx:
+            signals.append("🔴 Death Cross")
+            signal_dates["🔴 Death Cross"] = idx.strftime('%Y-%m-%d')
 
     # Bollinger Bands
-    if f'Bollinger_Upper_Break_{asset_key}' in df.columns and df[f'Bollinger_Upper_Break_{asset_key}'].iloc[-1] == 1:
-        signals.append("📈 Above Upper Bollinger Band")
-    elif f'Bollinger_Lower_Break_{asset_key}' in df.columns and df[f'Bollinger_Lower_Break_{asset_key}'].iloc[-1] == 1:
-        signals.append("📉 Below Lower Bollinger Band")
+    upper_col = f'Bollinger_Upper_Break_{asset_key}'
+    lower_col = f'Bollinger_Lower_Break_{asset_key}'
+    if upper_col in df.columns and df[upper_col].iloc[-1] == 1:
+        signals.append("🟢 Above Upper Bollinger Band")
+        signal_dates["🟢 Above Upper Bollinger Band"] = df.index[-1].strftime('%Y-%m-%d')
+    elif lower_col in df.columns and df[lower_col].iloc[-1] == 1:
+        signals.append("🔴 Below Lower Bollinger Band")
+        signal_dates["🔴 Below Lower Bollinger Band"] = df.index[-1].strftime('%Y-%m-%d')
+    else:
+        signals.append("🟠 Within Bollinger Bands")
+        signal_dates["🟠 Within Bollinger Bands"] = df.index[-1].strftime('%Y-%m-%d')
 
     # MACD Momentum
     if f'MACD_Above_Signal_{asset_key}' in df.columns:
-        macd_signal = "⚡ Bullish Momentum" if df[f'MACD_Above_Signal_{asset_key}'].iloc[-1] == 1 else "⚡ Bearish Momentum"
-        signals.append(macd_signal)
+        val = df[f'MACD_Above_Signal_{asset_key}'].iloc[-1]
+        signal = "🟢 Bullish Momentum" if val == 1 else "🔴 Bearish Momentum"
+        signals.append(signal)
+        signal_dates[signal] = df.index[-1].strftime('%Y-%m-%d')
 
-    # Stochastic Oscillator
+    # Stochastic
     if f'Stoch_Overbought_{asset_key}' in df.columns and df[f'Stoch_Overbought_{asset_key}'].iloc[-1] == 1:
-        signals.append("📈 Stochastic Overbought")
+        signals.append("🟢 Stochastic Overbought")
+        signal_dates["🟢 Stochastic Overbought"] = df.index[-1].strftime('%Y-%m-%d')
     elif f'Stoch_Oversold_{asset_key}' in df.columns and df[f'Stoch_Oversold_{asset_key}'].iloc[-1] == 1:
-        signals.append("📉 Stochastic Oversold")
+        signals.append("🔴 Stochastic Oversold")
+        signal_dates["🔴 Stochastic Oversold"] = df.index[-1].strftime('%Y-%m-%d')
 
     # RSI
     if f'RSI_Overbought_{asset_key}' in df.columns and df[f'RSI_Overbought_{asset_key}'].iloc[-1] == 1:
-        signals.append("📈 RSI Overbought")
+        signals.append("🟢 RSI Overbought")
+        signal_dates["🟢 RSI Overbought"] = df.index[-1].strftime('%Y-%m-%d')
     elif f'RSI_Oversold_{asset_key}' in df.columns and df[f'RSI_Oversold_{asset_key}'].iloc[-1] == 1:
-        signals.append("📉 RSI Oversold")
+        signals.append("🔴 RSI Oversold")
+        signal_dates["🔴 RSI Oversold"] = df.index[-1].strftime('%Y-%m-%d')
 
     # VWAP
     if f'Price_Above_VWAP_{asset_key}' in df.columns and df[f'Price_Above_VWAP_{asset_key}'].iloc[-1] == 1:
-        signals.append("📈 Price Above VWAP")
+        signals.append("🟢 Price Above VWAP")
+        signal_dates["🟢 Price Above VWAP"] = df.index[-1].strftime('%Y-%m-%d')
 
     # Volume Breakout
     if f'High_Volume_{asset_key}' in df.columns and df[f'High_Volume_{asset_key}'].iloc[-1] == 1:
-        signals.append("🚀 High Volume Breakout")
+        signals.append("🟢 High Volume Breakout")
+        signal_dates["🟢 High Volume Breakout"] = df.index[-1].strftime('%Y-%m-%d')
 
-    # --- Sort signals by priority ---
-    signals_sorted = sorted(signals, key=lambda x: priority_order.index(x) if x in priority_order else 999)
+    # Sort by importance
+    signals_sorted = sorted(signals, key=lambda x: priority_order.index(x))
 
-    # --- Fill summary_data ---
-    if not signals_sorted:
-        summary_data["Signal Summary"].append("⚠️ No significant signals")
-    else:
-        summary_data["Signal Summary"].append("\n".join(signals_sorted))
+    # Append to summary
     summary_data["Asset"].append(asset_key)
+    summary_data["Signal Summary"].append("\n".join(signals_sorted) if signals_sorted else "⚠️ No significant signals")
 
-    # --- Fill detailed_data ---
-    today_date = master_df_dashboard.index[-1].strftime('%Y-%m-%d')
-    for signal in signals_sorted:
-        detailed_data.append([asset_key, signal, "Active", today_date])
+    # Interpret signals
+    if all("🟢" in s for s in signals_sorted if "🟠" not in s):
+        interpretation = "📈 Expected Price Increase"
+    elif all("🔴" in s for s in signals_sorted if "🟠" not in s):
+        interpretation = "📉 Expected Price Decrease"
+    else:
+        interpretation = "🤔 Mixed Signals – Monitor Closely"
+    summary_data["Interpretation"].append(interpretation)
 
-# --- Quick Summary Table ---
+    # Fill detailed data
+    for sig in signals_sorted:
+        date = signal_dates.get(sig, "N/A")
+        detailed_data.append([asset_key, sig, "Active", date])
+
+# Display summary table
 st.markdown("### 📊 Technical Signals Summary")
 st.dataframe(pd.DataFrame(summary_data), hide_index=True)
 
 # --- Interactive Detailed Signals ---
 st.markdown("### Explore Detailed Signals")
-
 asset_options = ["None", "All"] + list(asset_prefixes.keys())
-signal_types = ["None", "Moving Averages", "Bollinger Bands", "Momentum"]
-
 selected_asset = st.selectbox("Select Asset", asset_options)
 
 detailed_df = pd.DataFrame(detailed_data, columns=["Asset", "Signal Type", "Status", "Date"])
 
 if selected_asset == "None":
-    filtered_df = pd.DataFrame(columns=["Asset", "Signal Type", "Status", "Date"])
+    filtered_df = pd.DataFrame(columns=detailed_df.columns)
 elif selected_asset == "All":
     filtered_df = detailed_df
 else:
@@ -397,16 +423,12 @@ st.markdown("### 🚨 Volume Breakout Alerts (>150% Avg Volume)")
 
 volume_alerts = []
 for asset_key, prefix in asset_prefixes.items():
-    # Special case for Gold volume to use the capped version
-    if prefix == "Gold":
-        vol_col = 'Volume_Gold_Capped'
-    else:
-        vol_col = f'Volume_{prefix}'
-        
-    if vol_col in master_df_dashboard.columns:
-        df = get_asset_data(asset_key)
-        avg_vol = df[vol_col].rolling(window=20).mean().iloc[-1]
-        current_vol = df[vol_col].iloc[-2]  # Use previous day's volume
+    df = get_asset_data(asset_key)
+    vol_col = 'Volume_Gold_Capped' if prefix == "Gold" else f'Volume_{prefix}'
+
+    if vol_col in df.columns:
+        avg_vol = df[vol_col].rolling(20).mean().iloc[-2]
+        current_vol = df[vol_col].iloc[-2]
         vol_date = df.index[-2].strftime('%Y-%m-%d')
 
         if current_vol > 1.5 * avg_vol:
@@ -418,24 +440,23 @@ vol_df = pd.DataFrame(volume_alerts, columns=["Asset", "Current Volume", "20D Av
 vol_df_sorted = vol_df.sort_values(by="Signal", ascending=True)
 st.dataframe(vol_df_sorted, hide_index=True)
 
-# --- Calculate Overall Market Sentiment (before any asset selection) ---
-all_detailed_df = pd.DataFrame(detailed_data, columns=["Asset", "Signal Type", "Status", "Date"])
+# --- Market Sentiment Summary ---
+bullish_assets = set()
+bearish_assets = set()
+for row in detailed_data:
+    asset, signal = row[0], row[1]
+    if "Bullish" in signal or "🟢" in signal:
+        bullish_assets.add(asset)
+    elif "Bearish" in signal or "🔴" in signal:
+        bearish_assets.add(asset)
 
-bullish_signals = all_detailed_df[all_detailed_df['Status'].str.contains("Bullish")]
-bearish_signals = all_detailed_df[all_detailed_df['Status'].str.contains("Bearish")]
-
-bullish_count = bullish_signals.shape[0]
-bearish_count = bearish_signals.shape[0]
-
-if bullish_count > bearish_count:
-    bullish_assets = bullish_signals['Asset'].unique()
+if len(bullish_assets) > len(bearish_assets):
     overall_sentiment_placeholder.success(
-        f"📢 Market Sentiment Based on Signals: **Bullish Bias** ({bullish_count} bullish signals: {', '.join(bullish_assets)})"
+        f"📢 Market Sentiment Based on Signals: **Bullish Bias** ({len(bullish_assets)} bullish signals: {', '.join(sorted(bullish_assets))})"
     )
-elif bearish_count > bullish_count:
-    bearish_assets = bearish_signals['Asset'].unique()
+elif len(bearish_assets) > len(bullish_assets):
     overall_sentiment_placeholder.error(
-        f"📢 Market Sentiment Based on Signals: **Bearish Bias** ({bearish_count} bearish signals: {', '.join(bearish_assets)})"
+        f"📢 Market Sentiment Based on Signals: **Bearish Bias** ({len(bearish_assets)} bearish signals: {', '.join(sorted(bearish_assets))})"
     )
 else:
     overall_sentiment_placeholder.info("📢 Market Sentiment Based on Signals: **Neutral**")
