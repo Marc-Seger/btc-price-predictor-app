@@ -271,12 +271,15 @@ st.success(f"**Total Cumulative Flow:** {total_flow_billion:,.2f} B USD")
 st.markdown("---")
 
 # =========================================
-# 🚨 Signals & Insights
+# 🚨 Signals & Insights (UPDATED)
 # =========================================
 st.subheader("🚨 Signals & Insights")
 
 # --- Overall Market Sentiment Placeholder ---
 overall_sentiment_placeholder = st.empty()
+
+# --- Bitcoin Sentiment Placeholder (NEW) ---
+btc_sentiment_placeholder = st.empty()
 
 # --- Define Asset Prefixes ---
 asset_prefixes = {
@@ -290,7 +293,7 @@ asset_prefixes = {
 # --- Helper to Extract Asset Data ---
 def get_asset_data(asset_key):
     prefix = asset_prefixes[asset_key]
-    cols = [col for col in master_df_dashboard.columns if f"_{prefix}" in col or col.startswith(f"{prefix}")]
+    cols = [col for col in master_df_dashboard.columns if f'_{prefix}' in col or col.startswith(f'{prefix}')]
     return master_df_dashboard[cols].copy()
 
 # --- Generate Signal Data ---
@@ -365,7 +368,8 @@ for asset_key, prefix in asset_prefixes.items():
 
 # --- Summary Table ---
 st.markdown("### 📊 Technical Signals Summary")
-st.dataframe(pd.DataFrame(summary_data), hide_index=True)
+summary_df = pd.DataFrame(summary_data)
+st.dataframe(summary_df, hide_index=True)
 
 # --- Explore Detailed Signals ---
 st.markdown("### Explore Detailed Signals")
@@ -377,22 +381,76 @@ detailed_df = pd.DataFrame(detailed_data, columns=["Asset", "Signal Type", "Stat
 filtered_df = detailed_df if selected_asset == "All" else detailed_df[detailed_df["Asset"] == selected_asset]
 st.dataframe(filtered_df.sort_values(by="Date", ascending=False), hide_index=True)
 
-# --- Market Sentiment Based on MACD & Golden/Death Cross Only ---
-bullish_count = detailed_df[detailed_df["Signal Type"].isin(["Golden Cross", "MACD > Signal Line"])].shape[0]
-bearish_count = detailed_df[detailed_df["Signal Type"].isin(["Death Cross", "MACD < Signal Line"])].shape[0]
+# --- Bitcoin Sentiment Line (NEW) ---
+btc_signals = detailed_df[detailed_df['Asset'] == "BTC"]
+btc_bullish = btc_signals['Signal Type'].isin(["Golden Cross", "MACD > Signal Line", "Price Above VWAP"]).sum()
+btc_bearish = btc_signals['Signal Type'].isin(["Death Cross", "MACD < Signal Line", "Price Below VWAP"]).sum()
 
-if bullish_count > bearish_count:
-    bullish_assets = detailed_df[detailed_df["Signal Type"].isin(["Golden Cross", "MACD > Signal Line"])]["Asset"].unique()
+if btc_bullish > btc_bearish:
+    btc_bias = "Bullish Bias"
+    btc_color = "🟢"
+elif btc_bearish > btc_bullish:
+    btc_bias = "Bearish Bias"
+    btc_color = "🔴"
+else:
+    btc_bias = "Neutral Bias"
+    btc_color = "🟠"
+
+btc_sentiment_placeholder.markdown(
+    f"""
+    <div style="background-color: #f0f2f6; padding: 10px; border-radius: 10px;">
+        📢 <strong>Bitcoin Sentiment Based on Signals:</strong> {btc_bias} ({btc_bullish} bullish, {btc_bearish} bearish signals detected)
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# --- Market Sentiment Based on All Assets ---
+bullish_signals = detailed_df[detailed_df['Signal Type'].isin(["Golden Cross", "MACD > Signal Line"])]
+bearish_signals = detailed_df[detailed_df['Signal Type'].isin(["Death Cross", "MACD < Signal Line"])]
+
+if len(bullish_signals) > len(bearish_signals):
+    bullish_assets = bullish_signals["Asset"].unique()
     overall_sentiment_placeholder.success(
-        f"📢 Market Sentiment Based on Signals: **Bullish Bias** ({bullish_count} bullish signals: {', '.join(bullish_assets)})"
+        f"📢 Market Sentiment Based on Signals: **Bullish Bias** ({len(bullish_signals)} bullish signals: {', '.join(bullish_assets)})"
     )
-elif bearish_count > bullish_count:
-    bearish_assets = detailed_df[detailed_df["Signal Type"].isin(["Death Cross", "MACD < Signal Line"])]["Asset"].unique()
+elif len(bearish_signals) > len(bullish_signals):
+    bearish_assets = bearish_signals["Asset"].unique()
     overall_sentiment_placeholder.error(
-        f"📢 Market Sentiment Based on Signals: **Bearish Bias** ({bearish_count} bearish signals: {', '.join(bearish_assets)})"
+        f"📢 Market Sentiment Based on Signals: **Bearish Bias** ({len(bearish_signals)} bearish signals: {', '.join(bearish_assets)})"
     )
 else:
     overall_sentiment_placeholder.info("📢 Market Sentiment Based on Signals: **Neutral**")
+
+st.markdown("---")
+
+# --- 📚 Signal Legend ---
+# Only show explanations for ACTIVE signals
+active_signals = detailed_df["Signal Type"].unique()
+
+signal_explanations = {
+    "Golden Cross": "50-day EMA crossing above 200-day EMA → Bullish momentum confirmation.",
+    "Death Cross": "50-day EMA crossing below 200-day EMA → Bearish momentum confirmation.",
+    "MACD > Signal Line": "MACD line (12,26,9) crossing above Signal Line → Positive trend momentum.",
+    "MACD < Signal Line": "MACD line (12,26,9) crossing below Signal Line → Negative trend momentum.",
+    "Price Above VWAP": "Price closing above 30-day VWAP → Short-term bullish strength.",
+    "Price Below VWAP": "Price closing below 30-day VWAP → Short-term bearish weakness."
+}
+
+if len(active_signals) > 0:
+    st.markdown("### 📚 Signal Legend")
+    with st.container():
+        st.markdown(
+            """
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 10px;">
+            """,
+            unsafe_allow_html=True
+        )
+        for signal in active_signals:
+            explanation = signal_explanations.get(signal)
+            if explanation:
+                st.markdown(f"**{signal}:** {explanation}")
+        st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("---")
 
