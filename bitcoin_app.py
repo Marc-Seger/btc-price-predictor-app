@@ -376,21 +376,21 @@ st.dataframe(pd.DataFrame(summary_data), hide_index=True)
 # --- Interactive Detailed Signals ---
 st.markdown("### Explore Detailed Signals")
 
-asset_options = ["None"] + list(asset_prefixes.keys())
+asset_options = ["None", "All"] + list(asset_prefixes.keys())
 signal_types = ["None", "Moving Averages", "Bollinger Bands", "Momentum"]
 
 selected_asset = st.selectbox("Select Asset", asset_options)
-selected_signal = st.selectbox("Select Signal Type", signal_types)
 
 detailed_df = pd.DataFrame(detailed_data, columns=["Asset", "Signal Type", "Status", "Date"])
 
-if selected_asset != "None":
-    detailed_df = detailed_df[detailed_df["Asset"] == selected_asset]
-if selected_signal != "None":
-    detailed_df = detailed_df[detailed_df["Signal Type"] == selected_signal]
+if selected_asset == "None":
+    filtered_df = pd.DataFrame(columns=["Asset", "Signal Type", "Status", "Date"])
+elif selected_asset == "All":
+    filtered_df = detailed_df
+else:
+    filtered_df = detailed_df[detailed_df["Asset"] == selected_asset]
 
-if selected_asset != "None" or selected_signal != "None":
-    st.dataframe(detailed_df, hide_index=True)
+st.dataframe(filtered_df, hide_index=True)
 
 # --- Volume Breakout Alerts ---
 st.markdown("### 🚨 Volume Breakout Alerts (>150% Avg Volume)")
