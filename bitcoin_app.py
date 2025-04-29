@@ -5,6 +5,8 @@ import plotly.graph_objects as go   # For dynamic charts
 import datetime
 from plotly.subplots import make_subplots
 
+st.cache_data.clear()
+
 # === Load Data ===
 # === Load master_df_dashboard ===
 master_df_dashboard = pd.read_csv('data/master_df_dashboard.csv', index_col=0, parse_dates=True)
