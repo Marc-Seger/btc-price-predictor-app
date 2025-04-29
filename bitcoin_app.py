@@ -271,15 +271,13 @@ st.success(f"**Total Cumulative Flow:** {total_flow_billion:,.2f} B USD")
 st.markdown("---")
 
 # =========================================
-# 🚨 Signals & Insights (UPDATED)
+# 🚨 Signals & Insights (FIXED)
 # =========================================
 st.subheader("🚨 Signals & Insights")
 
-# --- Overall Market Sentiment Placeholder ---
-overall_sentiment_placeholder = st.empty()
-
-# --- Bitcoin Sentiment Placeholder (NEW) ---
+# --- Placeholders ---
 btc_sentiment_placeholder = st.empty()
+overall_sentiment_placeholder = st.empty()
 
 # --- Define Asset Prefixes ---
 asset_prefixes = {
@@ -290,144 +288,135 @@ asset_prefixes = {
     "DXY": "DXY"
 }
 
-# --- Helper to Extract Asset Data ---
+# --- Extract & Analyze Signals ---
 def get_asset_data(asset_key):
     prefix = asset_prefixes[asset_key]
     cols = [col for col in master_df_dashboard.columns if f'_{prefix}' in col or col.startswith(f'{prefix}')]
     return master_df_dashboard[cols].copy()
 
-# --- Generate Signal Data ---
 summary_data = {"Asset": [], "Signal Summary": [], "Interpretation": []}
 detailed_data = []
 
 for asset_key, prefix in asset_prefixes.items():
     df = get_asset_data(asset_key)
-
-    long_term = "Neutral"
-    mid_term = "Neutral"
-    short_term = "Neutral"
-
+    long_term = mid_term = short_term = "Neutral"
     summary_signals = []
 
-    # --- Golden/Death Cross ---
     if f'Golden_Cross_{asset_key}' in df.columns and df[f'Golden_Cross_{asset_key}'].any():
-        last_idx = df[df[f'Golden_Cross_{asset_key}'] == 1].index[-1]
+        idx = df[df[f'Golden_Cross_{asset_key}'] == 1].index[-1]
         summary_signals.append("Golden Cross")
         long_term = "Bullish"
-        detailed_data.append([asset_key, "Golden Cross", "Active", last_idx.strftime('%Y-%m-%d')])
+        detailed_data.append([asset_key, "Golden Cross", idx.strftime('%Y-%m-%d')])
     elif f'Death_Cross_{asset_key}' in df.columns and df[f'Death_Cross_{asset_key}'].any():
-        last_idx = df[df[f'Death_Cross_{asset_key}'] == 1].index[-1]
+        idx = df[df[f'Death_Cross_{asset_key}'] == 1].index[-1]
         summary_signals.append("Death Cross")
         long_term = "Bearish"
-        detailed_data.append([asset_key, "Death Cross", "Active", last_idx.strftime('%Y-%m-%d')])
+        detailed_data.append([asset_key, "Death Cross", idx.strftime('%Y-%m-%d')])
 
-    # --- MACD Crossover ---
-    if f'MACD_Above_Signal_{asset_key}' in df.columns and df[f'MACD_Above_Signal_{asset_key}'].any():
-        last_idx = df[df[f'MACD_Above_Signal_{asset_key}'] == 1].index[-1]
-        summary_signals.append("MACD > Signal Line")
-        mid_term = "Bullish"
-        detailed_data.append([asset_key, "MACD > Signal Line", "Active", last_idx.strftime('%Y-%m-%d')])
-    elif f'MACD_Above_Signal_{asset_key}' in df.columns and (df[f'MACD_Above_Signal_{asset_key}'] == 0).any():
-        last_idx = df[df[f'MACD_Above_Signal_{asset_key}'] == 0].index[-1]
-        summary_signals.append("MACD < Signal Line")
-        mid_term = "Bearish"
-        detailed_data.append([asset_key, "MACD < Signal Line", "Active", last_idx.strftime('%Y-%m-%d')])
+    if f'MACD_Above_Signal_{asset_key}' in df.columns:
+        latest = df[f'MACD_Above_Signal_{asset_key}'].iloc[-1]
+        idx = df.index[-1]
+        if latest == 1:
+            summary_signals.append("MACD > Signal Line")
+            mid_term = "Bullish"
+            detailed_data.append([asset_key, "MACD > Signal Line", idx.strftime('%Y-%m-%d')])
+        elif latest == 0:
+            summary_signals.append("MACD < Signal Line")
+            mid_term = "Bearish"
+            detailed_data.append([asset_key, "MACD < Signal Line", idx.strftime('%Y-%m-%d')])
 
-    # --- Price vs VWAP ---
-    if f'Price_Above_VWAP_{asset_key}' in df.columns and df[f'Price_Above_VWAP_{asset_key}'].any():
-        last_idx = df[df[f'Price_Above_VWAP_{asset_key}'] == 1].index[-1]
-        summary_signals.append("Price Above VWAP")
-        short_term = "Bullish"
-        detailed_data.append([asset_key, "Price Above VWAP", "Active", last_idx.strftime('%Y-%m-%d')])
-    elif f'Price_Above_VWAP_{asset_key}' in df.columns and (df[f'Price_Above_VWAP_{asset_key}'] == 0).any():
-        last_idx = df[df[f'Price_Above_VWAP_{asset_key}'] == 0].index[-1]
-        summary_signals.append("Price Below VWAP")
-        short_term = "Bearish"
-        detailed_data.append([asset_key, "Price Below VWAP", "Active", last_idx.strftime('%Y-%m-%d')])
+    if f'Price_Above_VWAP_{asset_key}' in df.columns:
+        latest = df[f'Price_Above_VWAP_{asset_key}'].iloc[-1]
+        idx = df.index[-1]
+        if latest == 1:
+            summary_signals.append("Price Above VWAP")
+            short_term = "Bullish"
+            detailed_data.append([asset_key, "Price Above VWAP", idx.strftime('%Y-%m-%d')])
+        elif latest == 0:
+            summary_signals.append("Price Below VWAP")
+            short_term = "Bearish"
+            detailed_data.append([asset_key, "Price Below VWAP", idx.strftime('%Y-%m-%d')])
 
-    # --- Summary Formatting ---
-    summary_data["Asset"].append(asset_key)
-    summary_data["Signal Summary"].append(", ".join(summary_signals) if summary_signals else "No significant signals")
-
-    # --- Interpretation Logic ---
-    def map_emoji(label):
-        return "🟢" if label == "Bullish" else "🔴" if label == "Bearish" else "🟠"
+    def map_emoji(val): return "🟢" if val == "Bullish" else "🔴" if val == "Bearish" else "🟠"
 
     if long_term == short_term == "Bullish":
-        interpretation = f"{map_emoji('Bullish')} Short & Long-Term Bullish"
+        interp = f"{map_emoji('Bullish')} Short & Long-Term Bullish"
     elif long_term == short_term == "Bearish":
-        interpretation = f"{map_emoji('Bearish')} Short & Long-Term Bearish"
+        interp = f"{map_emoji('Bearish')} Short & Long-Term Bearish"
     elif short_term == "Bullish" and long_term == "Bearish":
-        interpretation = f"🟠 Short-Term Bullish, Long-Term Bearish"
+        interp = f"🟠 Short-Term Bullish, Long-Term Bearish"
     elif short_term == "Bearish" and long_term == "Bullish":
-        interpretation = f"🟠 Short-Term Bearish, Long-Term Bullish"
+        interp = f"🟠 Short-Term Bearish, Long-Term Bullish"
     else:
-        interpretation = f"🟠 Mixed Signals – Monitor Closely"
+        interp = f"🟠 Mixed Signals – Monitor Closely"
 
-    summary_data["Interpretation"].append(interpretation)
+    summary_data["Asset"].append(asset_key)
+    summary_data["Signal Summary"].append(", ".join(summary_signals) if summary_signals else "No significant signals")
+    summary_data["Interpretation"].append(interp)
 
 # --- Summary Table ---
 st.markdown("### 📊 Technical Signals Summary")
 summary_df = pd.DataFrame(summary_data)
-st.dataframe(summary_df, hide_index=True)
+st.dataframe(summary_df.style.set_properties(**{
+    'text-align': 'left'
+}).set_table_styles([
+    {"selector": "th.col_heading.level0", "props": [("text-align", "center")]},
+    {"selector": "td:nth-child(2)", "props": [("text-align", "center")]},
+    {"selector": "td:nth-child(3)", "props": [("text-align", "center")]}
+]), hide_index=True)
 
 # --- Explore Detailed Signals ---
 st.markdown("### Explore Detailed Signals")
+asset_select = st.selectbox("Select Asset", ["All"] + list(asset_prefixes.keys()))
+detailed_df = pd.DataFrame(detailed_data, columns=["Asset", "Signal Type", "Date"])
+filtered_df = detailed_df if asset_select == "All" else detailed_df[detailed_df["Asset"] == asset_select]
 
-asset_options = ["All"] + list(asset_prefixes.keys())
-selected_asset = st.selectbox("Select Asset", asset_options)
+st.dataframe(filtered_df.style.set_properties(**{
+    'text-align': 'left'
+}).set_table_styles([
+    {"selector": "th.col_heading.level0", "props": [("text-align", "center")]},
+    {"selector": "td:nth-child(2)", "props": [("text-align", "center")]},
+    {"selector": "td:nth-child(3)", "props": [("text-align", "center")]}
+]), hide_index=True)
 
-detailed_df = pd.DataFrame(detailed_data, columns=["Asset", "Signal Type", "Status", "Date"])
-filtered_df = detailed_df if selected_asset == "All" else detailed_df[detailed_df["Asset"] == selected_asset]
-st.dataframe(filtered_df.sort_values(by="Date", ascending=False), hide_index=True)
+# --- Bitcoin Sentiment ---
+btc_df = detailed_df[detailed_df["Asset"] == "BTC"]
+btc_bull = btc_df["Signal Type"].isin(["Golden Cross", "MACD > Signal Line", "Price Above VWAP"]).sum()
+btc_bear = btc_df["Signal Type"].isin(["Death Cross", "MACD < Signal Line", "Price Below VWAP"]).sum()
 
-# --- Bitcoin Sentiment Line (NEW) ---
-btc_signals = detailed_df[detailed_df['Asset'] == "BTC"]
-btc_bullish = btc_signals['Signal Type'].isin(["Golden Cross", "MACD > Signal Line", "Price Above VWAP"]).sum()
-btc_bearish = btc_signals['Signal Type'].isin(["Death Cross", "MACD < Signal Line", "Price Below VWAP"]).sum()
-
-if btc_bullish > btc_bearish:
-    btc_bias = "Bullish Bias"
+if btc_bull > btc_bear:
+    btc_sent = "Bullish Bias"
     btc_color = "🟢"
-elif btc_bearish > btc_bullish:
-    btc_bias = "Bearish Bias"
+elif btc_bear > btc_bull:
+    btc_sent = "Bearish Bias"
     btc_color = "🔴"
 else:
-    btc_bias = "Neutral Bias"
+    btc_sent = "Neutral Bias"
     btc_color = "🟠"
 
-btc_sentiment_placeholder.markdown(
-    f"""
-    <div style="background-color: #f0f2f6; padding: 10px; border-radius: 10px;">
-        📢 <strong>Bitcoin Sentiment Based on Signals:</strong> {btc_bias} ({btc_bullish} bullish, {btc_bearish} bearish signals detected)
-    </div>
-    """,
-    unsafe_allow_html=True
+btc_sentiment_placeholder.success(
+    f"📢 Bitcoin Sentiment Based on Signals: **{btc_sent}** ({btc_bull} bullish, {btc_bear} bearish signals detected)"
 )
 
-# --- Market Sentiment Based on All Assets ---
-bullish_signals = detailed_df[detailed_df['Signal Type'].isin(["Golden Cross", "MACD > Signal Line"])]
-bearish_signals = detailed_df[detailed_df['Signal Type'].isin(["Death Cross", "MACD < Signal Line"])]
+# --- Market Sentiment ---
+bullish_assets = detailed_df[detailed_df["Signal Type"].isin(["Golden Cross", "MACD > Signal Line"])]["Asset"].unique()
+bearish_assets = detailed_df[detailed_df["Signal Type"].isin(["Death Cross", "MACD < Signal Line"])]["Asset"].unique()
 
-if len(bullish_signals) > len(bearish_signals):
-    bullish_assets = bullish_signals["Asset"].unique()
+if len(bullish_assets) > len(bearish_assets):
     overall_sentiment_placeholder.success(
-        f"📢 Market Sentiment Based on Signals: **Bullish Bias** ({len(bullish_signals)} bullish signals: {', '.join(bullish_assets)})"
+        f"📢 Market Sentiment Based on Signals: **Bullish Bias** ({len(bullish_assets)} bullish signals: {', '.join(bullish_assets)})"
     )
-elif len(bearish_signals) > len(bullish_signals):
-    bearish_assets = bearish_signals["Asset"].unique()
+elif len(bearish_assets) > len(bullish_assets):
     overall_sentiment_placeholder.error(
-        f"📢 Market Sentiment Based on Signals: **Bearish Bias** ({len(bearish_signals)} bearish signals: {', '.join(bearish_assets)})"
+        f"📢 Market Sentiment Based on Signals: **Bearish Bias** ({len(bearish_assets)} bearish signals: {', '.join(bearish_assets)})"
     )
 else:
-    overall_sentiment_placeholder.info("📢 Market Sentiment Based on Signals: **Neutral**")
+    overall_sentiment_placeholder.info("📢 Market Sentiment Based on Signals: **Neutral Bias**")
 
 st.markdown("---")
 
-# --- 📚 Signal Legend ---
-# Only show explanations for ACTIVE signals
+# --- Signal Legend ---
 active_signals = detailed_df["Signal Type"].unique()
-
 signal_explanations = {
     "Golden Cross": "50-day EMA crossing above 200-day EMA → Bullish momentum confirmation.",
     "Death Cross": "50-day EMA crossing below 200-day EMA → Bearish momentum confirmation.",
@@ -437,12 +426,12 @@ signal_explanations = {
     "Price Below VWAP": "Price closing below 30-day VWAP → Short-term bearish weakness."
 }
 
-if len(active_signals) > 0:
+if active_signals.any():
     st.markdown("### 📚 Signal Legend")
     with st.container():
         st.markdown(
             """
-            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 10px;">
+            <div style="background-color: #1e1e1e; padding: 15px; border-radius: 10px;">
             """,
             unsafe_allow_html=True
         )
@@ -451,8 +440,6 @@ if len(active_signals) > 0:
             if explanation:
                 st.markdown(f"**{signal}:** {explanation}")
         st.markdown("</div>", unsafe_allow_html=True)
-
-st.markdown("---")
 
 # =========================
 # 😨 Sentiment Section
