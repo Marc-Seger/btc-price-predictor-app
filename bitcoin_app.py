@@ -5,8 +5,6 @@ import plotly.graph_objects as go   # For dynamic charts
 import datetime
 from plotly.subplots import make_subplots
 
-# Trigger redeploy
-
 # === Load Data ===
 # === Load master_df_dashboard ===
 master_df_dashboard = pd.read_csv('data/master_df_dashboard.csv', index_col=0, parse_dates=True)
@@ -277,7 +275,7 @@ st.markdown(
 st.markdown("---")
 
 # =========================================
-# 🚨 Signals & Insights (FIXED)
+# 🚨 Signals & Insights
 # =========================================
 st.subheader("🚨 Signals & Insights")
 
@@ -295,7 +293,8 @@ def get_asset_data(asset_key):
     cols = [col for col in master_df_dashboard.columns if f'_{prefix}' in col or col.startswith(f'{prefix}')]
     return master_df_dashboard[cols].copy()
 
-summary_data = {"Asset": [], "Signal Type": [], "Date": []}
+# --- Collect Signal Info ---
+summary_data = {"Asset": [], "Signal Summary": [], "Interpretation": []}
 detailed_data = []
 
 for asset_key, prefix in asset_prefixes.items():
@@ -303,6 +302,7 @@ for asset_key, prefix in asset_prefixes.items():
     long_term = mid_term = short_term = "Neutral"
     summary_signals = []
 
+    # --- Golden/Death Cross
     if f'Golden_Cross_{asset_key}' in df.columns and df[f'Golden_Cross_{asset_key}'].any():
         idx = df[df[f'Golden_Cross_{asset_key}'] == 1].index[-1]
         summary_signals.append("Golden Cross")
@@ -314,6 +314,7 @@ for asset_key, prefix in asset_prefixes.items():
         long_term = "Bearish"
         detailed_data.append([asset_key, "Death Cross", idx.strftime('%Y-%m-%d')])
 
+    # --- MACD Signal
     if f'MACD_Above_Signal_{asset_key}' in df.columns:
         latest = df[f'MACD_Above_Signal_{asset_key}'].iloc[-1]
         idx = df.index[-1]
@@ -326,6 +327,7 @@ for asset_key, prefix in asset_prefixes.items():
             mid_term = "Bearish"
             detailed_data.append([asset_key, "MACD < Signal Line", idx.strftime('%Y-%m-%d')])
 
+    # --- VWAP Signal
     if f'Price_Above_VWAP_{asset_key}' in df.columns:
         latest = df[f'Price_Above_VWAP_{asset_key}'].iloc[-1]
         idx = df.index[-1]
@@ -338,8 +340,8 @@ for asset_key, prefix in asset_prefixes.items():
             short_term = "Bearish"
             detailed_data.append([asset_key, "Price Below VWAP", idx.strftime('%Y-%m-%d')])
 
+    # --- Interpretation
     def map_emoji(val): return "🟢" if val == "Bullish" else "🔴" if val == "Bearish" else "🟠"
-
     if long_term == short_term == "Bullish":
         interp = f"{map_emoji('Bullish')} Short & Long-Term Bullish"
     elif long_term == short_term == "Bearish":
@@ -352,63 +354,47 @@ for asset_key, prefix in asset_prefixes.items():
         interp = f"🟠 Mixed Signals – Monitor Closely"
 
     summary_data["Asset"].append(asset_key)
-    summary_data["Signal Type"].append(", ".join(summary_signals) if summary_signals else "No significant signals")
-    summary_data["Date"].append(interp)
+    summary_data["Signal Summary"].append(", ".join(summary_signals) if summary_signals else "No significant signals")
+    summary_data["Interpretation"].append(interp)
 
-# === Build DataFrames ===
+# --- Build DataFrames ---
 summary_df = pd.DataFrame(summary_data)
 detailed_df = pd.DataFrame(detailed_data, columns=["Asset", "Signal Type", "Date"])
 
-# === Bitcoin Sentiment Box ===
+# --- Bitcoin Sentiment Box (ETF style)
 btc_df = detailed_df[detailed_df["Asset"] == "BTC"]
 btc_bull = btc_df["Signal Type"].isin(["Golden Cross", "MACD > Signal Line", "Price Above VWAP"]).sum()
 btc_bear = btc_df["Signal Type"].isin(["Death Cross", "MACD < Signal Line", "Price Below VWAP"]).sum()
 
 if btc_bull > btc_bear:
-    btc_color = "#14532d"
-    btc_msg = f"📢 Bitcoin Sentiment Based on Signals: <strong>Bullish Bias</strong> ({btc_bull} bullish, {btc_bear} bearish signals detected)"
+    st.info(f"📢 Bitcoin Sentiment Based on Signals: **Bullish Bias** ({btc_bull} bullish, {btc_bear} bearish signals detected)")
 elif btc_bear > btc_bull:
-    btc_color = "#7f1d1d"
-    btc_msg = f"📢 Bitcoin Sentiment Based on Signals: <strong>Bearish Bias</strong> ({btc_bull} bullish, {btc_bear} bearish signals detected)"
+    st.info(f"📢 Bitcoin Sentiment Based on Signals: **Bearish Bias** ({btc_bull} bullish, {btc_bear} bearish signals detected)")
 else:
-    btc_color = "#1e3a8a"
-    btc_msg = f"📢 Bitcoin Sentiment Based on Signals: <strong>Neutral Bias</strong> ({btc_bull} bullish, {btc_bear} bearish signals detected)"
+    st.info(f"📢 Bitcoin Sentiment Based on Signals: **Neutral Bias** ({btc_bull} bullish, {btc_bear} bearish signals detected)")
 
-st.markdown(
-    f"<div style='background-color:{btc_color}; color:white; padding:10px; border-radius:10px;'>{btc_msg}</div>",
-    unsafe_allow_html=True
-)
-
-# === Market Sentiment Box ===
+# --- Market Sentiment Box (ETF style)
 bullish_assets = detailed_df[detailed_df["Signal Type"].isin(["Golden Cross", "MACD > Signal Line"])]["Asset"].unique()
 bearish_assets = detailed_df[detailed_df["Signal Type"].isin(["Death Cross", "MACD < Signal Line"])]["Asset"].unique()
 
 if len(bullish_assets) > len(bearish_assets):
-    mkt_color = "#14532d"
-    mkt_msg = f"📢 Market Sentiment Based on Signals: <strong>Bullish Bias</strong> ({len(bullish_assets)} bullish signals: {', '.join(bullish_assets)})"
+    st.success(f"📢 Market Sentiment Based on Signals: **Bullish Bias** ({len(bullish_assets)} bullish signals: {', '.join(bullish_assets)})")
 elif len(bearish_assets) > len(bullish_assets):
-    mkt_color = "#7f1d1d"
-    mkt_msg = f"📢 Market Sentiment Based on Signals: <strong>Bearish Bias</strong> ({len(bearish_assets)} bearish signals: {', '.join(bearish_assets)})"
+    st.error(f"📢 Market Sentiment Based on Signals: **Bearish Bias** ({len(bearish_assets)} bearish signals: {', '.join(bearish_assets)})")
 else:
-    mkt_color = "#1e3a8a"
-    mkt_msg = "📢 Market Sentiment Based on Signals: <strong>Neutral Bias</strong>"
+    st.info("📢 Market Sentiment Based on Signals: **Neutral Bias**")
 
-st.markdown(
-    f"<div style='background-color:{mkt_color}; color:white; padding:10px; border-radius:10px;'>{mkt_msg}</div>",
-    unsafe_allow_html=True
-)
-
-# === Summary Table ===
+# --- Summary Table ---
 st.markdown("### 📊 Technical Signals Summary")
 st.dataframe(summary_df, hide_index=True)
 
-# === Detailed Signal Table ===
+# --- Explore Detailed Signals ---
 st.markdown("### Explore Detailed Signals")
 asset_select = st.selectbox("Select Asset", ["All"] + list(asset_prefixes.keys()))
 filtered_df = detailed_df if asset_select == "All" else detailed_df[detailed_df["Asset"] == asset_select]
 st.dataframe(filtered_df, hide_index=True)
 
-# === Signal Legend ===
+# --- Signal Legend ---
 active_signals = detailed_df["Signal Type"].unique()
 signal_explanations = {
     "Golden Cross": "50-day EMA crossing above 200-day EMA → Bullish momentum confirmation.",
