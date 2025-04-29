@@ -406,8 +406,9 @@ for asset_key, prefix in asset_prefixes.items():
     if vol_col in master_df_dashboard.columns:
         df = get_asset_data(asset_key)
         avg_vol = df[vol_col].rolling(window=20).mean().iloc[-1]
-        current_vol = df[vol_col].iloc[-1]
-        vol_date = df.index[-1].strftime('%Y-%m-%d')
+        current_vol = df[vol_col].iloc[-2]  # Use previous day's volume
+        vol_date = df.index[-2].strftime('%Y-%m-%d')
+
         if current_vol > 1.5 * avg_vol:
             volume_alerts.append([asset_key, f"{current_vol:,.0f} ({vol_date})", f"{avg_vol:,.0f}", "⚡ Breakout"])
         else:
