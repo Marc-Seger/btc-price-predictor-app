@@ -361,7 +361,7 @@ for asset_key, prefix in asset_prefixes.items():
     if not signals_sorted:
         summary_data["Signal Summary"].append("⚠️ No significant signals")
     else:
-        summary_data["Signal Summary"].append("; ".join(signals_sorted))
+        summary_data["Signal Summary"].append("\n".join(signals_sorted))
     summary_data["Asset"].append(asset_key)
 
     # --- Fill detailed_data ---
