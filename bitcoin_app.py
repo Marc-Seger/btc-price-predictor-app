@@ -284,13 +284,12 @@ asset_prefixes = {
     "DXY": "DXY"
 }
 
-# --- Extract & Analyze Signals ---
 def get_asset_data(asset_key):
     prefix = asset_prefixes[asset_key]
     cols = [col for col in master_df_dashboard.columns if f'_{prefix}' in col or col.startswith(f'{prefix}')]
     return master_df_dashboard[cols].copy()
 
-summary_data = {"Asset": [], "Signal Summary": [], "Interpretation": []}
+summary_data = {"Asset": [], "Signal Type": [], "Date": []}
 detailed_data = []
 
 for asset_key, prefix in asset_prefixes.items():
@@ -347,63 +346,63 @@ for asset_key, prefix in asset_prefixes.items():
         interp = f"🟠 Mixed Signals – Monitor Closely"
 
     summary_data["Asset"].append(asset_key)
-    summary_data["Signal Summary"].append(", ".join(summary_signals) if summary_signals else "No significant signals")
-    summary_data["Interpretation"].append(interp)
+    summary_data["Signal Type"].append(", ".join(summary_signals) if summary_signals else "No significant signals")
+    summary_data["Date"].append(interp)
 
-# --- Create DataFrames ---
+# === Build DataFrames ===
 summary_df = pd.DataFrame(summary_data)
 detailed_df = pd.DataFrame(detailed_data, columns=["Asset", "Signal Type", "Date"])
 
-# --- Sentiment Cards ---
+# === Bitcoin Sentiment Box ===
 btc_df = detailed_df[detailed_df["Asset"] == "BTC"]
 btc_bull = btc_df["Signal Type"].isin(["Golden Cross", "MACD > Signal Line", "Price Above VWAP"]).sum()
 btc_bear = btc_df["Signal Type"].isin(["Death Cross", "MACD < Signal Line", "Price Below VWAP"]).sum()
 
+if btc_bull > btc_bear:
+    btc_color = "#14532d"
+    btc_msg = f"📢 Bitcoin Sentiment Based on Signals: <strong>Bullish Bias</strong> ({btc_bull} bullish, {btc_bear} bearish signals detected)"
+elif btc_bear > btc_bull:
+    btc_color = "#7f1d1d"
+    btc_msg = f"📢 Bitcoin Sentiment Based on Signals: <strong>Bearish Bias</strong> ({btc_bull} bullish, {btc_bear} bearish signals detected)"
+else:
+    btc_color = "#1e3a8a"
+    btc_msg = f"📢 Bitcoin Sentiment Based on Signals: <strong>Neutral Bias</strong> ({btc_bull} bullish, {btc_bear} bearish signals detected)"
+
+st.markdown(
+    f"<div style='background-color:{btc_color}; color:white; padding:10px; border-radius:10px;'>{btc_msg}</div>",
+    unsafe_allow_html=True
+)
+
+# === Market Sentiment Box ===
 bullish_assets = detailed_df[detailed_df["Signal Type"].isin(["Golden Cross", "MACD > Signal Line"])]["Asset"].unique()
 bearish_assets = detailed_df[detailed_df["Signal Type"].isin(["Death Cross", "MACD < Signal Line"])]["Asset"].unique()
 
-# Style ref from ETF boxes
-color_green = "#14532d"
-color_blue = "#1e3a8a"
-color_red = "#7f1d1d"
-
-# Bitcoin Sentiment
-if btc_bull > btc_bear:
-    btc_style = f"background-color:{color_green};"
-    btc_text = f"📢 Bitcoin Sentiment Based on Signals: <strong>Bullish Bias</strong> ({btc_bull} bullish, {btc_bear} bearish signals detected)"
-elif btc_bear > btc_bull:
-    btc_style = f"background-color:{color_red};"
-    btc_text = f"📢 Bitcoin Sentiment Based on Signals: <strong>Bearish Bias</strong> ({btc_bull} bullish, {btc_bear} bearish signals detected)"
-else:
-    btc_style = f"background-color:{color_blue};"
-    btc_text = f"📢 Bitcoin Sentiment Based on Signals: <strong>Neutral Bias</strong> ({btc_bull} bullish, {btc_bear} bearish signals detected)"
-
-st.markdown(f"<div style='{btc_style} color:white; padding:10px; border-radius:10px;'>{btc_text}</div>", unsafe_allow_html=True)
-
-# Market Sentiment
 if len(bullish_assets) > len(bearish_assets):
-    mk_style = f"background-color:{color_green};"
-    mk_text = f"📢 Market Sentiment Based on Signals: <strong>Bullish Bias</strong> ({len(bullish_assets)} bullish signals: {', '.join(bullish_assets)})"
+    mkt_color = "#14532d"
+    mkt_msg = f"📢 Market Sentiment Based on Signals: <strong>Bullish Bias</strong> ({len(bullish_assets)} bullish signals: {', '.join(bullish_assets)})"
 elif len(bearish_assets) > len(bullish_assets):
-    mk_style = f"background-color:{color_red};"
-    mk_text = f"📢 Market Sentiment Based on Signals: <strong>Bearish Bias</strong> ({len(bearish_assets)} bearish signals: {', '.join(bearish_assets)})"
+    mkt_color = "#7f1d1d"
+    mkt_msg = f"📢 Market Sentiment Based on Signals: <strong>Bearish Bias</strong> ({len(bearish_assets)} bearish signals: {', '.join(bearish_assets)})"
 else:
-    mk_style = f"background-color:{color_blue};"
-    mk_text = f"📢 Market Sentiment Based on Signals: <strong>Neutral Bias</strong>"
+    mkt_color = "#1e3a8a"
+    mkt_msg = "📢 Market Sentiment Based on Signals: <strong>Neutral Bias</strong>"
 
-st.markdown(f"<div style='{mk_style} color:white; padding:10px; border-radius:10px;'>{mk_text}</div>", unsafe_allow_html=True)
+st.markdown(
+    f"<div style='background-color:{mkt_color}; color:white; padding:10px; border-radius:10px;'>{mkt_msg}</div>",
+    unsafe_allow_html=True
+)
 
-# --- Summary Table ---
+# === Summary Table ===
 st.markdown("### 📊 Technical Signals Summary")
 st.dataframe(summary_df, hide_index=True)
 
-# --- Explore Detailed Signals ---
+# === Detailed Signal Table ===
 st.markdown("### Explore Detailed Signals")
 asset_select = st.selectbox("Select Asset", ["All"] + list(asset_prefixes.keys()))
 filtered_df = detailed_df if asset_select == "All" else detailed_df[detailed_df["Asset"] == asset_select]
 st.dataframe(filtered_df, hide_index=True)
 
-# --- Signal Legend ---
+# === Signal Legend ===
 active_signals = detailed_df["Signal Type"].unique()
 signal_explanations = {
     "Golden Cross": "50-day EMA crossing above 200-day EMA → Bullish momentum confirmation.",
