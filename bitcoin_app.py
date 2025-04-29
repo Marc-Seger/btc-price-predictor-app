@@ -5,6 +5,8 @@ import plotly.graph_objects as go   # For dynamic charts
 import datetime
 from plotly.subplots import make_subplots
 
+st.cache_data.clear()
+
 # === Load Data ===
 # === Load master_df_dashboard ===
 master_df_dashboard = pd.read_csv('data/master_df_dashboard.csv', index_col=0, parse_dates=True)
@@ -302,14 +304,14 @@ for asset_key, prefix in asset_prefixes.items():
     long_term = mid_term = short_term = "Neutral"
     summary_signals = []
 
-    # --- Golden/Death Cross
-    if f'Golden_Cross_{asset_key}' in df.columns and df[f'Golden_Cross_{asset_key}'].any():
-        idx = df[df[f'Golden_Cross_{asset_key}'] == 1].index[-1]
+    # --- Golden/Death Cross (Updated to use true events)
+    if f'Golden_Cross_Event_{asset_key}' in df.columns and df[f'Golden_Cross_Event_{asset_key}'].any():
+        idx = df[df[f'Golden_Cross_Event_{asset_key}'] == 1].index[-1]
         summary_signals.append("Golden Cross")
         long_term = "Bullish"
         detailed_data.append([asset_key, "Golden Cross", idx.strftime('%Y-%m-%d')])
-    elif f'Death_Cross_{asset_key}' in df.columns and df[f'Death_Cross_{asset_key}'].any():
-        idx = df[df[f'Death_Cross_{asset_key}'] == 1].index[-1]
+    elif f'Death_Cross_Event_{asset_key}' in df.columns and df[f'Death_Cross_Event_{asset_key}'].any():
+        idx = df[df[f'Death_Cross_Event_{asset_key}'] == 1].index[-1]
         summary_signals.append("Death Cross")
         long_term = "Bearish"
         detailed_data.append([asset_key, "Death Cross", idx.strftime('%Y-%m-%d')])
