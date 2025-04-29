@@ -266,7 +266,11 @@ latest_val = net_flow.iloc[-1]
 total_flow_billion = cumulative_flow_billion.iloc[-1]
 
 st.info(f"**Latest Net Flow:** {'+' if latest_val >=0 else ''}{latest_val:,.1f} M USD")
-st.success(f"**Total Cumulative Flow:** {total_flow_billion:,.2f} B USD")
+st.markdown(
+    f"<div style='background-color:#14532d; color:white; padding:10px; border-radius:10px;'>"
+    f"📊 <strong>Total Cumulative Flow:</strong> {total_flow_billion:,.2f} B USD</div>",
+    unsafe_allow_html=True
+)
 
 st.markdown("---")
 
