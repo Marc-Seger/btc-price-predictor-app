@@ -36,15 +36,24 @@ btc_price = master_df_dashboard['Close_BTC-USD'].iloc[-1]
 btc_price_prev = master_df_dashboard['Close_BTC-USD'].iloc[-2]
 btc_pct_change = ((btc_price - btc_price_prev) / btc_price_prev) * 100
 
-col1.metric("BTC Price", f"${btc_price:,.0f}", f"{btc_pct_change:+.1f}%")
+col1.metric("BTC Price", f"${btc_price:,.0f}", f"{btc_pct_change:+.1f}% vs 1D")
 
 # --- Fear & Greed Index ---
 fng_value = master_df_dashboard['BTC_index_value'].iloc[-1]
 fng_label = master_df_dashboard['BTC_index_label'].iloc[-1]
-fng_prev = master_df_dashboard['BTC_index_value'].iloc[-2]
-fng_trend = "↑" if fng_value > fng_prev else "↓" if fng_value < fng_prev else "→"
 
-col2.metric("Fear & Greed Index", f"{fng_value} ({fng_label})", fng_trend)
+# Use 7-day delta if enough data, else fallback to 1-day
+if len(master_df_dashboard) >= 7:
+    fng_prev = master_df_dashboard['BTC_index_value'].iloc[-7]
+    delta_label = "vs 7D"
+else:
+    fng_prev = master_df_dashboard['BTC_index_value'].iloc[-2]
+    delta_label = "vs 1D"
+
+fng_change = fng_value - fng_prev
+fng_delta = f"{fng_change:+.1f} {delta_label}"
+
+col2.metric("Fear & Greed Index", f"{fng_value:.1f} ({fng_label})", fng_delta)
 
 # --- ETF Net Flow (latest day) ---
 latest_etf_net_flow = etf_flow['Total'].iloc[-1]
