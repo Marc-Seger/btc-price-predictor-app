@@ -326,16 +326,16 @@ for asset_key, prefix in asset_prefixes.items():
     # --- MACD Signal
     macd_signal_col = f'MACD_Above_Signal_{asset_key}'
     if macd_signal_col in df.columns:
-        latest = df[macd_signal_col].iloc[-1]
         signal_series = df[macd_signal_col]
+        latest = signal_series.iloc[-1]
+        
         if latest == 1:
-            # Get the streak start date for MACD above signal
-            streak_start = signal_series[signal_series[::-1] == 1].index[-1]
+            streak_start = signal_series[::-1].ne(1).idxmax()
             summary_signals.append("MACD > Signal Line")
             mid_term = "Bullish"
             detailed_data.append([asset_key, "MACD > Signal Line", streak_start.strftime('%Y-%m-%d')])
         elif latest == 0:
-            streak_start = signal_series[signal_series[::-1] == 0].index[-1]
+            streak_start = signal_series[::-1].ne(0).idxmax()
             summary_signals.append("MACD < Signal Line")
             mid_term = "Bearish"
             detailed_data.append([asset_key, "MACD < Signal Line", streak_start.strftime('%Y-%m-%d')])
@@ -343,15 +343,16 @@ for asset_key, prefix in asset_prefixes.items():
     # --- VWAP Signal
     vwap_signal_col = f'Price_Above_VWAP_{asset_key}'
     if vwap_signal_col in df.columns:
-        latest = df[vwap_signal_col].iloc[-1]
         signal_series = df[vwap_signal_col]
+        latest = signal_series.iloc[-1]
+
         if latest == 1:
-            streak_start = signal_series[signal_series[::-1] == 1].index[-1]
+            streak_start = signal_series[::-1].ne(1).idxmax()
             summary_signals.append("Price Above VWAP")
             short_term = "Bullish"
             detailed_data.append([asset_key, "Price Above VWAP", streak_start.strftime('%Y-%m-%d')])
         elif latest == 0:
-            streak_start = signal_series[signal_series[::-1] == 0].index[-1]
+            streak_start = signal_series[::-1].ne(0).idxmax()
             summary_signals.append("Price Below VWAP")
             short_term = "Bearish"
             detailed_data.append([asset_key, "Price Below VWAP", streak_start.strftime('%Y-%m-%d')])
