@@ -332,7 +332,7 @@ for asset_key, prefix in asset_prefixes.items():
             streak_start = signal_series[signal_series[::-1] == 1].index[-1]
             summary_signals.append("MACD > Signal Line")
             mid_term = "Bullish"
-            detailed_data.append([asset_key, f"MACD > Signal Line (since {streak_start.strftime('%Y-%m-%d')})", streak_start.strftime('%Y-%m-%d')])
+            detailed_data.append([asset_key, "MACD > Signal Line", streak_start.strftime('%Y-%m-%d')])
         elif latest == 0:
             idx = df.index[-1]
             summary_signals.append("MACD < Signal Line")
@@ -348,12 +348,13 @@ for asset_key, prefix in asset_prefixes.items():
             streak_start = signal_series[signal_series[::-1] == 1].index[-1]
             summary_signals.append("Price Above VWAP")
             short_term = "Bullish"
-            detailed_data.append([asset_key, f"Price Above VWAP (since {streak_start.strftime('%Y-%m-%d')})", streak_start.strftime('%Y-%m-%d')])
+            detailed_data.append([asset_key, "Price Above VWAP", streak_start.strftime('%Y-%m-%d')])
         elif latest == 0:
             idx = df.index[-1]
             summary_signals.append("Price Below VWAP")
             short_term = "Bearish"
             detailed_data.append([asset_key, "Price Below VWAP", idx.strftime('%Y-%m-%d')])
+
 
     # --- Interpretation (always executed)
     def map_emoji(val): return "🟢" if val == "Bullish" else "🔴" if val == "Bearish" else "🟠"
