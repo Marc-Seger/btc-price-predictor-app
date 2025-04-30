@@ -27,66 +27,97 @@ st.set_page_config(page_title="Bitcoin Market Dashboard", page_icon="📊", layo
 st.title("📊 Bitcoin & Market Intelligence Dashboard")
 st.markdown("An interactive dashboard to monitor Bitcoin, financial markets, and key indicators. *(Work in Progress)*")
 
-# --- KPI Cards (Live Data) ---
+# --- KPI Cards (Styled) ---
 st.subheader("📈 Market Overview")
 col1, col2, col3, col4 = st.columns(4)
 
-# --- BTC Price (Dynamic Comparison) ---
-btc_prices = master_df_dashboard['Close_BTC-USD']
-btc_price = btc_prices.iloc[-1]
+# === BTC Price ===
+btc_series = master_df_dashboard['Close_BTC-USD']
+btc_price = btc_series.iloc[-1]
 
-# Find the last previous date with a different value
-for i in range(2, len(btc_prices)):
-    prev_price = btc_prices.iloc[-i]
-    if prev_price != btc_price:
-        days_ago = i - 1
-        btc_price_prev = prev_price
-        break
+# Find previous different value to avoid flat % change
+lookback = 2
+while lookback <= len(btc_series) and btc_series.iloc[-lookback] == btc_price:
+    lookback += 1
+
+if lookback > len(btc_series):
+    btc_change = 0
+    btc_text = "No Change"
 else:
-    btc_price_prev = btc_price
-    days_ago = 0
+    btc_prev = btc_series.iloc[-lookback]
+    btc_change = ((btc_price - btc_prev) / btc_prev) * 100
+    btc_text = f"{btc_change:+.1f}% vs {lookback-1}D"
+btc_color = "green" if btc_change > 0 else "red" if btc_change < 0 else "gray"
 
-btc_pct_change = ((btc_price - btc_price_prev) / btc_price_prev) * 100 if btc_price_prev != 0 else 0
-col1.metric("BTC Price", f"${btc_price:,.0f}", f"{btc_pct_change:+.1f}% vs {days_ago}D")
+col1.markdown(f"""
+    <div style='text-align:center'>
+        <div style='font-weight:600; font-size:1.1rem;'>BTC Price</div>
+        <div style='font-size:2rem; font-weight:700; margin:0.2rem 0;'>${btc_price:,.0f}</div>
+        <div style='font-size:0.9rem; color:{btc_color}; font-weight:500'>{btc_text}</div>
+    </div>
+""", unsafe_allow_html=True)
 
-# --- Fear & Greed Index ---
+
+# === Fear & Greed Index ===
 fng_value = master_df_dashboard['BTC_index_value'].iloc[-1]
 fng_label = master_df_dashboard['BTC_index_label'].iloc[-1]
 
-# vs 1D
+# 1D Change
 fng_1d = master_df_dashboard['BTC_index_value'].iloc[-2]
 fng_1d_change = fng_value - fng_1d
-fng_1d_delta = f"{fng_1d_change:+.1f} vs 1D"
+fng_1d_color = "green" if fng_1d_change > 0 else "red" if fng_1d_change < 0 else "gray"
+fng_1d_text = f"{fng_1d_change:+.1f} vs 1D"
 
-# vs 7D (fallback if not enough data)
+# 7D Change
 if len(master_df_dashboard) >= 8:
     fng_7d = master_df_dashboard['BTC_index_value'].iloc[-8]
     fng_7d_change = fng_value - fng_7d
-    fng_7d_delta = f"{fng_7d_change:+.1f} vs 7D"
+    fng_7d_color = "green" if fng_7d_change > 0 else "red" if fng_7d_change < 0 else "gray"
+    fng_7d_text = f"{fng_7d_change:+.1f} vs 7D"
 else:
-    fng_7d_delta = "N/A vs 7D"
+    fng_7d_text = "N/A vs 7D"
+    fng_7d_color = "gray"
 
-# Custom KPI layout with two lines
-fng_display = f"""
-<div style='line-height:1.2'>
-    <strong>{fng_value:.1f} ({fng_label})</strong><br>
-    <span style='font-size:0.9em; color:gray'>{fng_7d_delta}</span>
-</div>
-"""
+col2.markdown(f"""
+    <div style='text-align:center'>
+        <div style='font-weight:600; font-size:1.1rem;'>Fear & Greed Index</div>
+        <div style='font-size:2rem; font-weight:700; margin:0.2rem 0;'>{fng_value:.1f} ({fng_label})</div>
+        <div style='font-size:0.9rem; color:{fng_1d_color}; font-weight:500'>{fng_1d_text}</div>
+        <div style='font-size:0.9rem; color:{fng_7d_color}; font-weight:500'>{fng_7d_text}</div>
+    </div>
+""", unsafe_allow_html=True)
 
-col2.markdown("#### Fear & Greed Index")
-col2.markdown(fng_display, unsafe_allow_html=True)
-col2.metric(label="", value="", delta=fng_1d_delta)
 
-# --- ETF Net Flow (latest day) ---
+# === ETF Net Flow ===
 latest_etf_net_flow = etf_flow['Total'].iloc[-1]
-col3.metric("Last ETF Net Flow", f"{latest_etf_net_flow:+,.0f}M USD", "")
+etf_color = "green" if latest_etf_net_flow >= 0 else "red"
 
-# --- Volume Spike ---
+col3.markdown(f"""
+    <div style='text-align:center'>
+        <div style='font-weight:600; font-size:1.1rem;'>Last ETF Net Flow</div>
+        <div style='font-size:2rem; font-weight:700; margin:0.2rem 0; color:{etf_color}'>
+            {latest_etf_net_flow:+,.0f}M USD
+        </div>
+        <div style='font-size:0.9rem; color:gray; font-weight:500'>Latest Daily Value</div>
+    </div>
+""", unsafe_allow_html=True)
+
+
+# === Volume Spike ===
 volume_spike = master_df_dashboard['High_Volume_BTC'].iloc[-1]
 spike_status = "Yes" if volume_spike else "No"
-spike_delta = "🚨" if volume_spike else ""
-col4.metric("24h Volume Spike", spike_status, spike_delta)
+spike_color = "green" if volume_spike else "gray"
+spike_alert = "🚨" if volume_spike else "✅"
+
+col4.markdown(f"""
+    <div style='text-align:center'>
+        <div style='font-weight:600; font-size:1.1rem;'>24h Volume Spike</div>
+        <div style='font-size:2rem; font-weight:700; margin:0.2rem 0; color:{spike_color}'>
+            {spike_status}
+        </div>
+        <div style='font-size:0.9rem; color:{spike_color}; font-weight:500'>{spike_alert}</div>
+    </div>
+""", unsafe_allow_html=True)
 
 st.markdown("---")
 
