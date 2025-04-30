@@ -327,34 +327,34 @@ for asset_key, prefix in asset_prefixes.items():
     macd_signal_col = f'MACD_Above_Signal_{asset_key}'
     if macd_signal_col in df.columns:
         latest = df[macd_signal_col].iloc[-1]
+        signal_series = df[macd_signal_col]
         if latest == 1:
-            signal_series = df[macd_signal_col]
+            # Get the streak start date for MACD above signal
             streak_start = signal_series[signal_series[::-1] == 1].index[-1]
             summary_signals.append("MACD > Signal Line")
             mid_term = "Bullish"
             detailed_data.append([asset_key, "MACD > Signal Line", streak_start.strftime('%Y-%m-%d')])
         elif latest == 0:
-            idx = df.index[-1]
+            streak_start = signal_series[signal_series[::-1] == 0].index[-1]
             summary_signals.append("MACD < Signal Line")
             mid_term = "Bearish"
-            detailed_data.append([asset_key, "MACD < Signal Line", idx.strftime('%Y-%m-%d')])
+            detailed_data.append([asset_key, "MACD < Signal Line", streak_start.strftime('%Y-%m-%d')])
 
     # --- VWAP Signal
     vwap_signal_col = f'Price_Above_VWAP_{asset_key}'
     if vwap_signal_col in df.columns:
         latest = df[vwap_signal_col].iloc[-1]
+        signal_series = df[vwap_signal_col]
         if latest == 1:
-            signal_series = df[vwap_signal_col]
             streak_start = signal_series[signal_series[::-1] == 1].index[-1]
             summary_signals.append("Price Above VWAP")
             short_term = "Bullish"
             detailed_data.append([asset_key, "Price Above VWAP", streak_start.strftime('%Y-%m-%d')])
         elif latest == 0:
-            idx = df.index[-1]
+            streak_start = signal_series[signal_series[::-1] == 0].index[-1]
             summary_signals.append("Price Below VWAP")
             short_term = "Bearish"
-            detailed_data.append([asset_key, "Price Below VWAP", idx.strftime('%Y-%m-%d')])
-
+            detailed_data.append([asset_key, "Price Below VWAP", streak_start.strftime('%Y-%m-%d')])
 
     # --- Interpretation (always executed)
     def map_emoji(val): return "🟢" if val == "Bullish" else "🔴" if val == "Bearish" else "🟠"
