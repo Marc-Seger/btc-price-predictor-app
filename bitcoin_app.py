@@ -323,39 +323,39 @@ for asset_key, prefix in asset_prefixes.items():
         long_term = "Bearish"
         detailed_data.append([asset_key, "Death Cross", last_death.strftime('%Y-%m-%d')])
 
-# --- MACD Signal
-macd_signal_col = f'MACD_Above_Signal_{asset_key}'
-if macd_signal_col in df.columns:
-    latest = df[macd_signal_col].iloc[-1]
-    if latest == 1:
-        signal_series = df[macd_signal_col]
-        streak_start = signal_series[signal_series[::-1] == 1].index[-1]
-        summary_signals.append("MACD > Signal Line")
-        mid_term = "Bullish"
-        detailed_data.append([asset_key, f"MACD > Signal Line (since {streak_start.strftime('%Y-%m-%d')})", streak_start.strftime('%Y-%m-%d')])
-    elif latest == 0:
-        idx = df.index[-1]
-        summary_signals.append("MACD < Signal Line")
-        mid_term = "Bearish"
-        detailed_data.append([asset_key, "MACD < Signal Line", idx.strftime('%Y-%m-%d')])
+    # --- MACD Signal
+    macd_signal_col = f'MACD_Above_Signal_{asset_key}'
+    if macd_signal_col in df.columns:
+        latest = df[macd_signal_col].iloc[-1]
+        if latest == 1:
+            signal_series = df[macd_signal_col]
+            streak_start = signal_series[signal_series[::-1] == 1].index[-1]
+            summary_signals.append("MACD > Signal Line")
+            mid_term = "Bullish"
+            detailed_data.append([asset_key, f"MACD > Signal Line (since {streak_start.strftime('%Y-%m-%d')})", streak_start.strftime('%Y-%m-%d')])
+        elif latest == 0:
+            idx = df.index[-1]
+            summary_signals.append("MACD < Signal Line")
+            mid_term = "Bearish"
+            detailed_data.append([asset_key, "MACD < Signal Line", idx.strftime('%Y-%m-%d')])
 
-# --- VWAP Signal
-vwap_signal_col = f'Price_Above_VWAP_{asset_key}'
-if vwap_signal_col in df.columns:
-    latest = df[vwap_signal_col].iloc[-1]
-    if latest == 1:
-        signal_series = df[vwap_signal_col]
-        streak_start = signal_series[signal_series[::-1] == 1].index[-1]
-        summary_signals.append("Price Above VWAP")
-        short_term = "Bullish"
-        detailed_data.append([asset_key, f"Price Above VWAP (since {streak_start.strftime('%Y-%m-%d')})", streak_start.strftime('%Y-%m-%d')])
-    elif latest == 0:
-        idx = df.index[-1]
-        summary_signals.append("Price Below VWAP")
-        short_term = "Bearish"
-        detailed_data.append([asset_key, "Price Below VWAP", idx.strftime('%Y-%m-%d')])
+    # --- VWAP Signal
+    vwap_signal_col = f'Price_Above_VWAP_{asset_key}'
+    if vwap_signal_col in df.columns:
+        latest = df[vwap_signal_col].iloc[-1]
+        if latest == 1:
+            signal_series = df[vwap_signal_col]
+            streak_start = signal_series[signal_series[::-1] == 1].index[-1]
+            summary_signals.append("Price Above VWAP")
+            short_term = "Bullish"
+            detailed_data.append([asset_key, f"Price Above VWAP (since {streak_start.strftime('%Y-%m-%d')})", streak_start.strftime('%Y-%m-%d')])
+        elif latest == 0:
+            idx = df.index[-1]
+            summary_signals.append("Price Below VWAP")
+            short_term = "Bearish"
+            detailed_data.append([asset_key, "Price Below VWAP", idx.strftime('%Y-%m-%d')])
 
-    # --- Interpretation
+    # --- Interpretation (always executed)
     def map_emoji(val): return "🟢" if val == "Bullish" else "🔴" if val == "Bearish" else "🟠"
     if long_term == short_term == "Bullish":
         interp = f"{map_emoji('Bullish')} Short & Long-Term Bullish"
@@ -371,6 +371,7 @@ if vwap_signal_col in df.columns:
     summary_data["Asset"].append(asset_key)
     summary_data["Signal Summary"].append(", ".join(summary_signals) if summary_signals else "No significant signals")
     summary_data["Interpretation"].append(interp)
+
 
 # --- Build DataFrames ---
 summary_df = pd.DataFrame(summary_data)
