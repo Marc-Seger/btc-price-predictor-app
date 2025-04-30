@@ -27,13 +27,34 @@ st.set_page_config(page_title="Bitcoin Market Dashboard", page_icon="📊", layo
 st.title("📊 Bitcoin & Market Intelligence Dashboard")
 st.markdown("An interactive dashboard to monitor Bitcoin, financial markets, and key indicators. *(Work in Progress)*")
 
-# --- KPI Cards (Placeholders) ---
+# --- KPI Cards (Live Data) ---
 st.subheader("📈 Market Overview")
 col1, col2, col3, col4 = st.columns(4)
-col1.metric("BTC Price", "$94,200", "+2.3%")
-col2.metric("Fear & Greed Index", "72 (Greed)", "↑")
-col3.metric("Last ETF Net Flow", "+$180M", "")
-col4.metric("24h Volume Spike", "Yes", "🚨")
+
+# --- BTC Price ---
+btc_price = master_df_dashboard['Close_BTC-USD'].iloc[-1]
+btc_price_prev = master_df_dashboard['Close_BTC-USD'].iloc[-2]
+btc_pct_change = ((btc_price - btc_price_prev) / btc_price_prev) * 100
+
+col1.metric("BTC Price", f"${btc_price:,.0f}", f"{btc_pct_change:+.1f}%")
+
+# --- Fear & Greed Index ---
+fng_value = master_df_dashboard['BTC_index_value'].iloc[-1]
+fng_label = master_df_dashboard['BTC_index_label'].iloc[-1]
+fng_prev = master_df_dashboard['BTC_index_value'].iloc[-2]
+fng_trend = "↑" if fng_value > fng_prev else "↓" if fng_value < fng_prev else "→"
+
+col2.metric("Fear & Greed Index", f"{fng_value} ({fng_label})", fng_trend)
+
+# --- ETF Net Flow (latest day) ---
+latest_etf_net_flow = etf_flow['Total'].iloc[-1]
+col3.metric("Last ETF Net Flow", f"{latest_etf_net_flow:+,.0f}M USD", "")
+
+# --- Volume Spike ---
+volume_spike = master_df_dashboard['High_Volume_BTC-USD'].iloc[-1]
+spike_status = "Yes" if volume_spike else "No"
+spike_delta = "🚨" if volume_spike else ""
+col4.metric("24h Volume Spike", spike_status, spike_delta)
 
 st.markdown("---")
 
