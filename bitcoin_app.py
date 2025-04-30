@@ -304,13 +304,12 @@ for asset_key, prefix in asset_prefixes.items():
     long_term = mid_term = short_term = "Neutral"
     summary_signals = []
 
-    # --- Golden/Death Cross (Updated to use true events)
-    # --- Detect most recent Golden or Death Cross
+    # --- Golden/Death Cross Events ---
     golden_col = f'Golden_Cross_Event_{asset_key}'
     death_col = f'Death_Cross_Event_{asset_key}'
 
-    golden_dates = df[df.get(golden_col, pd.Series(dtype=bool)) == 1].index
-    death_dates = df[df.get(death_col, pd.Series(dtype=bool)) == 1].index
+    golden_dates = df[df[golden_col] == 1].index if golden_col in df.columns else []
+    death_dates = df[df[death_col] == 1].index if death_col in df.columns else []
 
     last_golden = golden_dates[-1] if len(golden_dates) > 0 else None
     last_death = death_dates[-1] if len(death_dates) > 0 else None
