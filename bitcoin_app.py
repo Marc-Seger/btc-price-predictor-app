@@ -31,12 +31,23 @@ st.markdown("An interactive dashboard to monitor Bitcoin, financial markets, and
 st.subheader("📈 Market Overview")
 col1, col2, col3, col4 = st.columns(4)
 
-# --- BTC Price ---
-btc_price = master_df_dashboard['Close_BTC-USD'].iloc[-1]
-btc_price_prev = master_df_dashboard['Close_BTC-USD'].iloc[-2]
-btc_pct_change = ((btc_price - btc_price_prev) / btc_price_prev) * 100
+# --- BTC Price (Dynamic Comparison) ---
+btc_prices = master_df_dashboard['Close_BTC-USD']
+btc_price = btc_prices.iloc[-1]
 
-col1.metric("BTC Price", f"${btc_price:,.0f}", f"{btc_pct_change:+.1f}% vs 1D")
+# Find the last previous date with a different value
+for i in range(2, len(btc_prices)):
+    prev_price = btc_prices.iloc[-i]
+    if prev_price != btc_price:
+        days_ago = i - 1
+        btc_price_prev = prev_price
+        break
+else:
+    btc_price_prev = btc_price
+    days_ago = 0
+
+btc_pct_change = ((btc_price - btc_price_prev) / btc_price_prev) * 100 if btc_price_prev != 0 else 0
+col1.metric("BTC Price", f"${btc_price:,.0f}", f"{btc_pct_change:+.1f}% vs {days_ago}D")
 
 # --- Fear & Greed Index ---
 fng_value = master_df_dashboard['BTC_index_value'].iloc[-1]
