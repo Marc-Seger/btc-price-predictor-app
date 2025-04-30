@@ -51,7 +51,7 @@ latest_etf_net_flow = etf_flow['Total'].iloc[-1]
 col3.metric("Last ETF Net Flow", f"{latest_etf_net_flow:+,.0f}M USD", "")
 
 # --- Volume Spike ---
-volume_spike = master_df_dashboard['High_Volume_BTC-USD'].iloc[-1]
+volume_spike = master_df_dashboard['High_Volume_BTC'].iloc[-1]
 spike_status = "Yes" if volume_spike else "No"
 spike_delta = "🚨" if volume_spike else ""
 col4.metric("24h Volume Spike", spike_status, spike_delta)
