@@ -5,7 +5,11 @@ import plotly.graph_objects as go   # For dynamic charts
 import datetime
 from plotly.subplots import make_subplots
 
-st.cache_data.clear()
+st.set_page_config(
+    page_title="Bitcoin Dashboard",
+    page_icon="images/favicon.ico",  
+    layout="wide"
+)
 
 # === Load Data ===
 # === Load master_df_dashboard ===
@@ -20,8 +24,6 @@ google_trends.ffill(inplace=True)
 
 # === Load ETF Flow ===
 etf_flow = pd.read_csv('data/ETF_Flow_Cleaned.csv', parse_dates=['Date'], index_col='Date')
-# --- Page Config ---
-st.set_page_config(page_title="Bitcoin Market Dashboard", page_icon="📊", layout="wide")
 
 # --- Header ---
 st.title("📊 Bitcoin & Market Intelligence Dashboard")
