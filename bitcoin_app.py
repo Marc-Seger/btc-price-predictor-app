@@ -399,8 +399,8 @@ st.dataframe(filtered_df, hide_index=True)
 # --- Signal Legend ---
 active_signals = detailed_df["Signal Type"].unique()
 signal_explanations = {
-    "Golden Cross": "50-day EMA crossing above 200-day EMA → Bullish momentum confirmation.",
-    "Death Cross": "50-day EMA crossing below 200-day EMA → Bearish momentum confirmation.",
+    "Golden Cross": "50-day SMA crossing above 200-day SMA → Bullish momentum confirmation.",
+    "Death Cross": "50-day SMA crossing below 200-day SMA → Bearish momentum confirmation.",
     "MACD > Signal Line": "MACD line (12,26,9) crossing above Signal Line → Positive trend momentum.",
     "MACD < Signal Line": "MACD line (12,26,9) crossing below Signal Line → Negative trend momentum.",
     "Price Above VWAP": "Price closing above 30-day VWAP → Short-term bullish strength.",
