@@ -2,7 +2,7 @@ import gdown
 import os
 
 # Define your target folder (adjust if your path is different)
-target_folder = '/Users/marcseger/Code/GitHubMarc/btc-price-predictor-app/data'
+target_folder = '/Users/marcseger/Code/GitHubMarc/bitcoin-market-dashboard/data'
 
 # List of files to download: {filename: file_id}
 files_to_download = {

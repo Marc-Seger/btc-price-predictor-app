@@ -31,7 +31,7 @@ c. Download On-Chain Data CSV:
 -----------------------------
 - Open Terminal
 - Navigate to repo:
-    cd ~/Code/GitHubMarc/btc-price-predictor-app
+    cd ~/Code/GitHubMarc/bitcoin-market-dashboard
 - Run the script:
     python3 sync_data_from_drive.py
 
