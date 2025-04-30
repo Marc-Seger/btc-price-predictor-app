@@ -53,18 +53,30 @@ col1.metric("BTC Price", f"${btc_price:,.0f}", f"{btc_pct_change:+.1f}% vs {days
 fng_value = master_df_dashboard['BTC_index_value'].iloc[-1]
 fng_label = master_df_dashboard['BTC_index_label'].iloc[-1]
 
-# Use 7-day delta if enough data, else fallback to 1-day
-if len(master_df_dashboard) >= 7:
-    fng_prev = master_df_dashboard['BTC_index_value'].iloc[-7]
-    delta_label = "vs 7D"
+# vs 1D
+fng_1d = master_df_dashboard['BTC_index_value'].iloc[-2]
+fng_1d_change = fng_value - fng_1d
+fng_1d_delta = f"{fng_1d_change:+.1f} vs 1D"
+
+# vs 7D (fallback if not enough data)
+if len(master_df_dashboard) >= 8:
+    fng_7d = master_df_dashboard['BTC_index_value'].iloc[-8]
+    fng_7d_change = fng_value - fng_7d
+    fng_7d_delta = f"{fng_7d_change:+.1f} vs 7D"
 else:
-    fng_prev = master_df_dashboard['BTC_index_value'].iloc[-2]
-    delta_label = "vs 1D"
+    fng_7d_delta = "N/A vs 7D"
 
-fng_change = fng_value - fng_prev
-fng_delta = f"{fng_change:+.1f} {delta_label}"
+# Custom KPI layout with two lines
+fng_display = f"""
+<div style='line-height:1.2'>
+    <strong>{fng_value:.1f} ({fng_label})</strong><br>
+    <span style='font-size:0.9em; color:gray'>{fng_7d_delta}</span>
+</div>
+"""
 
-col2.metric("Fear & Greed Index", f"{fng_value:.1f} ({fng_label})", fng_delta)
+col2.markdown("#### Fear & Greed Index")
+col2.markdown(fng_display, unsafe_allow_html=True)
+col2.metric(label="", value="", delta=fng_1d_delta)
 
 # --- ETF Net Flow (latest day) ---
 latest_etf_net_flow = etf_flow['Total'].iloc[-1]
