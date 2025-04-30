@@ -18,6 +18,7 @@ An interactive Streamlit dashboard to monitor Bitcoin's price, technical signals
 - ✅ Google Trends & Fear/Greed visualizations
 
 ## 📁 Repository Structure
+Bitcoin-market-dashboard/
 ├── data/ # Input data (CSV files from Drive) 
 ├── docs/ # Workflow and documentation 
 ├── bitcoin_app.py # Streamlit app code 
