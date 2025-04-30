@@ -439,8 +439,8 @@ with col1:
     st.line_chart(master_df_dashboard['BTC_index_value'].tail(14))
 
 with col2:
-    st.markdown("### 🔎 Google Trends: 'Bitcoin' (14D)")
-    st.line_chart(google_trends['GT_index_bitcoin'].tail(14))
+    st.markdown("### 🔎 Google Trends: 'Bitcoin' (1Y)")
+    st.line_chart(google_trends['GT_index_bitcoin'].tail(13))
 
 st.markdown("---")
 
