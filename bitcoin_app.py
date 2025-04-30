@@ -305,16 +305,24 @@ for asset_key, prefix in asset_prefixes.items():
     summary_signals = []
 
     # --- Golden/Death Cross (Updated to use true events)
-    if f'Golden_Cross_Event_{asset_key}' in df.columns and df[f'Golden_Cross_Event_{asset_key}'].any():
-        idx = df[df[f'Golden_Cross_Event_{asset_key}'] == 1].index[-1]
+    # --- Detect most recent Golden or Death Cross
+    golden_col = f'Golden_Cross_Event_{asset_key}'
+    death_col = f'Death_Cross_Event_{asset_key}'
+
+    golden_dates = df[df.get(golden_col, pd.Series(dtype=bool)) == 1].index
+    death_dates = df[df.get(death_col, pd.Series(dtype=bool)) == 1].index
+
+    last_golden = golden_dates[-1] if len(golden_dates) > 0 else None
+    last_death = death_dates[-1] if len(death_dates) > 0 else None
+
+    if last_golden and (not last_death or last_golden > last_death):
         summary_signals.append("Golden Cross")
         long_term = "Bullish"
-        detailed_data.append([asset_key, "Golden Cross", idx.strftime('%Y-%m-%d')])
-    elif f'Death_Cross_Event_{asset_key}' in df.columns and df[f'Death_Cross_Event_{asset_key}'].any():
-        idx = df[df[f'Death_Cross_Event_{asset_key}'] == 1].index[-1]
+        detailed_data.append([asset_key, "Golden Cross", last_golden.strftime('%Y-%m-%d')])
+    elif last_death:
         summary_signals.append("Death Cross")
         long_term = "Bearish"
-        detailed_data.append([asset_key, "Death Cross", idx.strftime('%Y-%m-%d')])
+        detailed_data.append([asset_key, "Death Cross", last_death.strftime('%Y-%m-%d')])
 
     # --- MACD Signal
     if f'MACD_Above_Signal_{asset_key}' in df.columns:
