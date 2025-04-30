@@ -82,20 +82,21 @@ col2.markdown(f"""
     <div style='text-align:center'>
         <div style='font-weight:600; font-size:1.1rem;'>Fear & Greed Index</div>
         <div style='font-size:2rem; font-weight:700; margin:0.2rem 0;'>{fng_value:.1f} ({fng_label})</div>
-        <div style='font-size:0.9rem; color:{fng_1d_color}; font-weight:500'>{fng_1d_text}</div>
-        <div style='font-size:0.9rem; color:{fng_7d_color}; font-weight:500'>{fng_7d_text}</div>
+        <div style='font-size:0.9rem; font-weight:500; display:flex; justify-content:center; gap:12px;'>
+            <span style='color:{fng_1d_color}'>{fng_1d_text}</span>
+            <span style='color:{fng_7d_color}'>{fng_7d_text}</span>
+        </div>
     </div>
 """, unsafe_allow_html=True)
 
 
 # === ETF Net Flow ===
 latest_etf_net_flow = etf_flow['Total'].iloc[-1]
-etf_color = "green" if latest_etf_net_flow >= 0 else "red"
 
 col3.markdown(f"""
     <div style='text-align:center'>
         <div style='font-weight:600; font-size:1.1rem;'>Last ETF Net Flow</div>
-        <div style='font-size:2rem; font-weight:700; margin:0.2rem 0; color:{etf_color}'>
+        <div style='font-size:2rem; font-weight:700; margin:0.2rem 0; color:white'>
             {latest_etf_net_flow:+,.0f}M USD
         </div>
         <div style='font-size:0.9rem; color:gray; font-weight:500'>Latest Daily Value</div>
@@ -106,8 +107,8 @@ col3.markdown(f"""
 # === Volume Spike ===
 volume_spike = master_df_dashboard['High_Volume_BTC'].iloc[-1]
 spike_status = "Yes" if volume_spike else "No"
-spike_color = "green" if volume_spike else "gray"
-spike_alert = "🚨" if volume_spike else "✅"
+spike_color = "green" if volume_spike else "white"
+spike_alert = "🚨" if volume_spike else ""
 
 col4.markdown(f"""
     <div style='text-align:center'>
