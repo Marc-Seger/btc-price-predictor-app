@@ -2,8 +2,9 @@
 
 An interactive Streamlit dashboard to monitor Bitcoin's price, technical signals, ETF flows, and market sentiment — powered entirely by Python.
 
-## 🚀 Live App
+## 🚀 Live App & Project Page
 👉 [Launch the App](https://marc-seger-bitcoin-market-dashboard.streamlit.app/)
+🌐 [Read Full Project Description on My Portfolio](https://marc-seger.github.io/portfolio-website/bitcoin-dashboard.html)
 
 ## 🧠 Features
 
