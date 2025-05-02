@@ -123,25 +123,7 @@ col4.markdown(f"""
 """, unsafe_allow_html=True)
 
 st.markdown("---")
-
-# =========================================
-# 🤖 Bitcoin Price Predictor (Coming Soon)
-# =========================================
-st.subheader("🤖 Bitcoin Price Predictor")
-
-st.markdown("Select a future date to predict Bitcoin's price. This feature is under development.")
-
-col1, col2 = st.columns([3,1])
-
-with col1:
-    future_date = st.date_input("Select Prediction Date", value=pd.Timestamp.today() + pd.Timedelta(days=7))
-
-with col2:
-    st.button("🔒 Predict", disabled=True)
-
-st.warning("🚧 This feature is a Work In Progress. Stay tuned!")
-
-st.markdown("---")
+st.markdown("🔮 Looking to forecast Bitcoin price? Try the [Bitcoin Price Predictor](https://bitcoin-price-predictor.streamlit.app) app!")
 
 # --- Main Chart Section ---
 st.subheader("🗺️ Asset Chart")
