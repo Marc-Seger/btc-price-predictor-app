@@ -123,7 +123,7 @@ col4.markdown(f"""
 """, unsafe_allow_html=True)
 
 st.markdown("---")
-st.markdown("🔮 Looking to forecast Bitcoin price? Try the [Bitcoin Price Predictor](https://bitcoin-price-predictor.streamlit.app) app!")
+st.markdown("🔮 Looking to forecast Bitcoin price? Try the [Bitcoin Price Predictor](https://bitcoin-predictor.streamlit.app/) app!")
 
 # --- Main Chart Section ---
 st.subheader("🗺️ Asset Chart")
