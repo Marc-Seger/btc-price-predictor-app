@@ -41,24 +41,22 @@ last_updated_date = master_df_dashboard.index.max().strftime("%Y-%m-%d")
 
 st.markdown(
     f"""
-    <div style='display: flex; align-items: flex-start; gap: 16px; margin-bottom: 20px;'>
+    <div style='display: flex; align-items: flex-start; gap: 20px; margin-bottom: 25px;'>
         <div style='flex-shrink: 0;'>
             <img src="data:image/png;base64,{bitcoin_logo_base64}" width="70" />
         </div>
-        <div>
-            <div style='margin-bottom: 4px;'>
-                <h1 style='margin: 0; font-size: 2.8rem;'>Bitcoin & Market Intelligence Dashboard</h1>
+        <div style='display: flex; flex-direction: column; justify-content: center;'>
+            <div style='font-size: 3rem; font-weight: 800; margin-bottom: 8px; color: white;'>
+                Bitcoin & Market Intelligence Dashboard
             </div>
-            <div style='margin: 0;'>
-                <p style='margin: 4px 0 0 0; font-size: 1.1rem; color: white;'>
-                    An interactive dashboard to monitor Bitcoin, financial markets, and key indicators.
-                    <em>(Last updated: {last_updated_date})</em>
-                </p>
-                <p style='margin: 6px 0 0 0; font-size: 1.1rem; color: white;'>
-                    🔮 Looking to forecast Bitcoin price? Try the
-                    <a href="https://bitcoin-predictor.streamlit.app/" target="_blank"
-                       style="color: #48b5ff; text-decoration: none;">Bitcoin Price Predictor</a> app!
-                </p>
+            <div style='font-size: 1.1rem; color: white; margin-bottom: 6px;'>
+                An interactive dashboard to monitor Bitcoin, financial markets, and key indicators.
+                <em>(Last updated: {last_updated_date})</em>
+            </div>
+            <div style='font-size: 1.1rem; color: white;'>
+                🔮 Looking to forecast Bitcoin price? Try the
+                <a href="https://bitcoin-predictor.streamlit.app/" target="_blank"
+                   style="color: #48b5ff; text-decoration: none;">Bitcoin Price Predictor</a> app!
             </div>
         </div>
     </div>
