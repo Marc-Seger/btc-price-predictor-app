@@ -192,7 +192,7 @@ with col4:
     indicators = st.multiselect("Select Indicators", ["SMA_20", "SMA_50", "SMA_200", "EMA_20", "EMA_50"], key="indicator_select")
 
 # === 2️⃣ Filter Data ===
-prefix = asset_options[asset_options]
+prefix = asset_options[asset]
 price_cols = [f'Open_{prefix}', f'High_{prefix}', f'Low_{prefix}', f'Close_{prefix}']
 volume_col = f'Volume_{prefix}' if f'Volume_{prefix}' in master_df_dashboard.columns else None
 
