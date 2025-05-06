@@ -27,7 +27,9 @@ etf_flow = pd.read_csv('data/ETF_Flow_Cleaned.csv', parse_dates=['Date'], index_
 
 # --- Header ---
 st.title("📊 Bitcoin & Market Intelligence Dashboard")
-st.markdown("An interactive dashboard to monitor Bitcoin, financial markets, and key indicators. *(Work in Progress)*")
+last_updated_date = master_df_dashboard.index.max().strftime("%Y-%m-%d")
+st.markdown(f"An interactive dashboard to monitor Bitcoin, financial markets, and key indicators. _(Last updated: {last_updated_date})_")
+
 
 # --- KPI Cards (Styled) ---
 st.subheader("📈 Market Overview")
