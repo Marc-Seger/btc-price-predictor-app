@@ -91,16 +91,25 @@ else:
     fng_7d_color = "gray"
 
 latest_etf_net_flow = etf_flow['Total'].iloc[-1]
-volume_spike = master_df_dashboard['High_Volume_BTC'].iloc[-1]
+
+# --- Synchronized Volume Spike & % Change ---
+vol_series = master_df_dashboard['Volume_BTC-USD'].dropna()
+
+# Use last and second-to-last complete rows
+last_idx = vol_series.index[-1]
+prev_idx = vol_series.index[-2]
+
+latest_volume = vol_series.loc[last_idx]
+previous_volume = vol_series.loc[prev_idx]
+
+# Calculate % change
+vol_change = ((latest_volume - previous_volume) / previous_volume) * 100 if previous_volume != 0 else 0
+vol_change_text = f"{vol_change:+.1f}% vs 1D"
+
+# Get spike value from the same row
+volume_spike = master_df_dashboard.loc[last_idx, 'High_Volume_BTC']
 spike_status = "Yes" if volume_spike else "No"
 spike_color = "green" if volume_spike else "white"
-spike_alert = "🚨" if volume_spike else ""
-
-vol_series = master_df_dashboard['Volume_BTC-USD']
-vol_change = 0
-if len(vol_series) >= 2 and vol_series.iloc[-2] != 0:
-    vol_change = ((vol_series.iloc[-1] - vol_series.iloc[-2]) / vol_series.iloc[-2]) * 100
-vol_change_text = f"{vol_change:+.1f}% vs 1D"
 
 # === KPI Cards Layout ===
 col1, col2, col3, col4 = st.columns(4)
