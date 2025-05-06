@@ -26,30 +26,23 @@ google_trends.ffill(inplace=True)
 etf_flow = pd.read_csv('data/ETF_Flow_Cleaned.csv', parse_dates=['Date'], index_col='Date')
 
 # --- Header ---
-# Title block with tighter spacing
-col1, col2 = st.columns([1, 12])  # Adjust ratio to bring title closer
-
-with col1:
-    st.image("images/bitcoin_logo.png", width=48)
-
-with col2:
-    st.markdown(
-        """
-        <div style='display: flex; align-items: center; height: 100%;'>
-            <h1 style='margin-bottom: 0;'>Bitcoin & Market Intelligence Dashboard</h1>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-# Show last updated date
 last_updated_date = master_df_dashboard.index.max().strftime("%Y-%m-%d")
+
 st.markdown(
-    f"<div style='font-size: 1rem;'>An interactive dashboard to monitor Bitcoin, financial markets, and key indicators. "
-    f"<em>(Last updated: {last_updated_date})</em></div>",
+    f"""
+    <div style='display: flex; align-items: center; gap: 16px;'>
+        <img src='images/bitcoin_logo.png' width='40' style='margin-bottom: 4px;'/>
+        <div>
+            <h1 style='margin-bottom: 0;'>Bitcoin & Market Intelligence Dashboard</h1>
+            <p style='margin-top: 0; font-size: 1rem; color: white;'>
+                An interactive dashboard to monitor Bitcoin, financial markets, and key indicators.
+                <em>(Last updated: {last_updated_date})</em>
+            </p>
+        </div>
+    </div>
+    """,
     unsafe_allow_html=True
 )
-
 
 # --- KPI Cards (Styled) ---
 st.subheader("📈 Market Overview")
