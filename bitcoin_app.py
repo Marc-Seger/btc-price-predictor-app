@@ -213,13 +213,18 @@ with col1:
     asset = st.selectbox("Select Asset", list(asset_options.keys()), key="asset_select")
 
 with col2:
-    chart_type = st.selectbox("Chart Type", ["Line Chart", "Candlestick"], key="chart_type_select")
+    chart_type = st.selectbox("Chart Type", ["Line Chart", "Candlestick"], index=1, key="chart_type_select")  # Default to Candlestick
 
 with col3:
     timeframe = st.selectbox("Candle Timeframe", ["1H", "4H", "Daily", "Weekly"], key="timeframe_select")
 
 with col4:
-    indicators = st.multiselect("Select Indicators", ["SMA_20", "SMA_50", "SMA_200", "EMA_20", "EMA_50"], key="indicator_select")
+    indicators = st.multiselect(
+        "Select Indicators",
+        ["SMA_20", "SMA_50", "SMA_200", "EMA_20", "EMA_50"],
+        default=["SMA_50", "SMA_200"],
+        key="indicator_select"
+    )  # Default to SMA 50 & 200
 
 # === 2️⃣ Filter Data ===
 prefix = asset_options[asset]
