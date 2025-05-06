@@ -36,8 +36,6 @@ with col2:
 
 last_updated_date = master_df_dashboard.index.max().strftime("%Y-%m-%d")
 st.markdown(f"An interactive dashboard to monitor Bitcoin, financial markets, and key indicators. _(Last updated: {last_updated_date})_")
-last_updated_date = master_df_dashboard.index.max().strftime("%Y-%m-%d")
-st.markdown(f"An interactive dashboard to monitor Bitcoin, financial markets, and key indicators. _(Last updated: {last_updated_date})_")
 
 
 # --- KPI Cards (Styled) ---
