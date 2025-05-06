@@ -191,9 +191,6 @@ with col3:
 with col4:
     indicators = st.multiselect("Select Indicators", ["SMA_20", "SMA_50", "SMA_200", "EMA_20", "EMA_50"], key="indicator_select")
 
-# Keep chart type on its own row
-chart_type = st.radio("Chart Type", ["Line Chart", "Candlestick"], horizontal=True)
-
 # === 2️⃣ Filter Data ===
 prefix = asset_options[asset_options]
 price_cols = [f'Open_{prefix}', f'High_{prefix}', f'Low_{prefix}', f'Close_{prefix}']
