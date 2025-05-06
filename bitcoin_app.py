@@ -39,6 +39,8 @@ bitcoin_logo_base64 = get_base64_image("images/bitcoin_logo.png")
 # === Refined Logo + Title Alignment ===
 last_updated_date = master_df_dashboard.index.max().strftime("%Y-%m-%d")
 
+st.markdown("<hr style='margin: 25px 0 10px 0; border: 1px solid gray;' />", unsafe_allow_html=True)
+
 st.markdown(
     f"""
     <div style='display: flex; align-items: flex-start; gap: 18px; margin-bottom: 0;'>
@@ -180,17 +182,16 @@ asset_options = {
 col1, col2, col3, col4 = st.columns([1.5, 1.8, 1.5, 2.2])
 
 with col1:
-    asset = st.selectbox("Select Asset", ["Bitcoin", "Gold", "SP500", "Nasdaq", "DXY"], key="asset_select")
+    asset = st.selectbox("Select Asset", list(asset_options.keys()), key="asset_select")
 
 with col2:
-    chart_type = st.radio("Chart Type", ["Line Chart", "Candlestick"], horizontal=True, key="chart_type_radio")
+    chart_type = st.selectbox("Chart Type", ["Line Chart", "Candlestick"], key="chart_type_select")
 
 with col3:
     timeframe = st.selectbox("Candle Timeframe", ["1H", "4H", "Daily", "Weekly"], key="timeframe_select")
 
 with col4:
     indicators = st.multiselect("Select Indicators", ["SMA_20", "SMA_50", "SMA_200", "EMA_20", "EMA_50"], key="indicator_select")
-
 
 # Keep chart type on its own row
 chart_type = st.radio("Chart Type", ["Line Chart", "Candlestick"], horizontal=True)
