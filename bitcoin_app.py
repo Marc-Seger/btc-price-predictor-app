@@ -90,8 +90,6 @@ else:
     fng_7d_text = "N/A vs 7D"
     fng_7d_color = "gray"
 
-latest_etf_net_flow = etf_flow['Total'].iloc[-1]
-
 # --- Synchronized Volume Spike & % Change ---
 vol_series = master_df_dashboard['Volume_BTC-USD'].dropna()
 
@@ -150,6 +148,13 @@ col2.markdown(f"""
 """, unsafe_allow_html=True)
 
 # --- ETF Flow Card ---
+latest_etf_net_flow = etf_flow['Total'].iloc[-1]
+prev_etf_net_flow = etf_flow['Total'].iloc[-2]
+
+etf_flow_change = ((latest_etf_net_flow - prev_etf_net_flow) / abs(prev_etf_net_flow) * 100) if prev_etf_net_flow != 0 else 0
+etf_flow_change_color = "green" if etf_flow_change > 0 else "red" if etf_flow_change < 0 else "gray"
+etf_flow_change_text = f"{etf_flow_change:+.1f}% vs 1D"
+
 col3.markdown(f"""
     <div style='
         background-color: #262730;
@@ -163,9 +168,12 @@ col3.markdown(f"""
         <div style='font-size:2rem; font-weight:700; margin:0.2rem 0; color:white'>
             {latest_etf_net_flow:+,.0f}M USD
         </div>
-        <div style='font-size:0.9rem; color:gray; font-weight:500'>Latest Daily Value</div>
+        <div style='font-size:0.9rem; color:{etf_flow_change_color}; font-weight:500'>
+            {etf_flow_change_text}
+        </div>
     </div>
 """, unsafe_allow_html=True)
+
 
 # --- Volume Spike Card ---
 col4.markdown(f"""
