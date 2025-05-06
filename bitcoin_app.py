@@ -177,17 +177,20 @@ asset_options = {
     "DXY": "DXY"
 }
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns([1.5, 1.5, 1.5, 2.5])
+
 with col1:
-    asset_choice = st.selectbox("Select Asset", list(asset_options.keys()))
+    asset = st.selectbox("Select Asset", ["Bitcoin", "Gold", "SP500", "Nasdaq", "DXY"])
+
 with col2:
-    timeframe = st.selectbox("Candle Timeframe", ["Daily", "Weekly", "Monthly"])
+    timeframe = st.selectbox("Candle Timeframe", ["1H", "4H", "Daily", "Weekly"])
+
 with col3:
-    indicators = st.multiselect("Select Indicators", [
-        "SMA_9", "SMA_20", "SMA_50", "SMA_200",
-        "EMA_9", "EMA_20", "EMA_50", "EMA_200",
-        "Bollinger Bands", "RSI", "MACD"
-    ], default=["SMA_50", "SMA_200"])
+    indicators = st.multiselect("Select Indicators", ["SMA_20", "SMA_50", "SMA_200", "EMA_20", "EMA_50"])
+
+with col4:
+    chart_type = st.radio("Chart Type", ["Line Chart", "Candlestick"], horizontal=True)
+
 
 # Keep chart type on its own row
 chart_type = st.radio("Chart Type", ["Line Chart", "Candlestick"], horizontal=True)
