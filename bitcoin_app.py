@@ -128,7 +128,7 @@ st.markdown("---")
 st.markdown("🔮 Looking to forecast Bitcoin price? Try the [Bitcoin Price Predictor](https://bitcoin-predictor.streamlit.app/) app!")
 
 # --- Main Chart Section ---
-st.subheader("🗺️ Asset Chart")
+st.subheader("Asset Chart")
 
 # === 1️⃣ Chart Controls ===
 asset_options = {
