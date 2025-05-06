@@ -39,13 +39,12 @@ bitcoin_logo_base64 = get_base64_image("images/bitcoin_logo.png")
 # === Refined Logo + Title Alignment ===
 last_updated_date = master_df_dashboard.index.max().strftime("%Y-%m-%d")
 
-# --- Main Header Block ---
 st.markdown(
     f"""
-    <div style='display: flex; align-items: flex-start; gap: 18px; margin-bottom: 10px;'>
+    <div style='display: flex; align-items: center; gap: 18px; margin-bottom: 4px;'>
         <img src="data:image/png;base64,{bitcoin_logo_base64}" width="64" />
         <div style='display: flex; flex-direction: column;'>
-            <div style='font-size: 2.6rem; font-weight: 800; color: white; margin-bottom: 4px;'>
+            <div style='font-size: 2.8rem; font-weight: 800; color: white; margin-bottom: 6px;'>
                 Bitcoin & Market Intelligence Dashboard
             </div>
             <div style='font-size: 1.1rem; color: white;'>
@@ -63,8 +62,14 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- KPI Cards (Styled) ---
-st.subheader("📈 Market Overview")
+# With a custom-aligned block like:
+st.markdown("""
+<div style='display: flex; align-items: center; gap: 10px; margin-top: 25px; margin-bottom: 10px;'>
+    <span style='font-size: 1.8rem;'>📈</span>
+    <span style='font-size: 1.8rem; font-weight: 600;'>Market Overview</span>
+</div>
+""", unsafe_allow_html=True)
+
 col1, col2, col3, col4 = st.columns(4)
 
 # === BTC Price ===
