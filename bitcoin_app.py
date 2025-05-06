@@ -25,13 +25,23 @@ google_trends.ffill(inplace=True)
 # === Load ETF Flow ===
 etf_flow = pd.read_csv('data/ETF_Flow_Cleaned.csv', parse_dates=['Date'], index_col='Date')
 
+import base64
+
+def get_base64_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
 # --- Header ---
+# === Load base64 image ===
+bitcoin_logo_base64 = get_base64_image("images/bitcoin_logo.png")
+
+# === Render title with embedded image ===
 last_updated_date = master_df_dashboard.index.max().strftime("%Y-%m-%d")
 
 st.markdown(
     f"""
     <div style='display: flex; align-items: center; gap: 16px;'>
-        <img src='images/bitcoin_logo.png' width='40' style='margin-bottom: 4px;'/>
+        <img src="data:image/png;base64,{bitcoin_logo_base64}" width="40" style="margin-bottom: 4px;" />
         <div>
             <h1 style='margin-bottom: 0;'>Bitcoin & Market Intelligence Dashboard</h1>
             <p style='margin-top: 0; font-size: 1rem; color: white;'>
@@ -43,6 +53,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 # --- KPI Cards (Styled) ---
 st.subheader("📈 Market Overview")
