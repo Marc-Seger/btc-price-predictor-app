@@ -41,21 +41,18 @@ last_updated_date = master_df_dashboard.index.max().strftime("%Y-%m-%d")
 
 st.markdown(
     f"""
-    <div style='display: flex; gap: 18px; margin-bottom: 10px; align-items: flex-start;'>
-        <img src="data:image/png;base64,{bitcoin_logo_base64}" width="60" style="margin-top: 6px;" />
+    <div style='display: flex; align-items: flex-start; gap: 18px; margin-bottom: 10px;'>
+        <img src="data:image/png;base64,{bitcoin_logo_base64}" width="60" style="margin-top: 4px;" />
         <div>
-            <h1 style='margin: 0; font-size: 3rem;'>Bitcoin & Market Intelligence Dashboard</h1>
+            <h1 style='margin: 0; font-size: 2.8rem;'>Bitcoin & Market Intelligence Dashboard</h1>
+            <p style='margin: 4px 0 0 0; font-size: 1.1rem; color: white;'>
+                An interactive dashboard to monitor Bitcoin, financial markets, and key indicators.
+                <em>(Last updated: {last_updated_date})</em>
+            </p>
+            <p style='margin: 6px 0 0 0; font-size: 1.1rem; color: white;'>
+                🔮 Looking to forecast Bitcoin price? Try the <a href="https://bitcoin-predictor.streamlit.app/" target="_blank" style="color: #48b5ff; text-decoration: none;">Bitcoin Price Predictor</a> app!
+            </p>
         </div>
-    </div>
-
-    <div style='margin-left: 78px;'>
-        <p style='margin: 0; font-size: 1rem; color: white;'>
-            An interactive dashboard to monitor Bitcoin, financial markets, and key indicators.
-            <em>(Last updated: {last_updated_date})</em>
-        </p>
-        <p style='margin: 4px 0 0 0; font-size: 1rem; color: white;'>
-            🔮 Looking to forecast Bitcoin price? Try the <a href="https://bitcoin-predictor.streamlit.app/" target="_blank" style="color: #91d6ff; text-decoration: none;">Bitcoin Price Predictor</a> app!
-        </p>
     </div>
     """,
     unsafe_allow_html=True
