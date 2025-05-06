@@ -39,8 +39,6 @@ bitcoin_logo_base64 = get_base64_image("images/bitcoin_logo.png")
 # === Refined Logo + Title Alignment ===
 last_updated_date = master_df_dashboard.index.max().strftime("%Y-%m-%d")
 
-st.markdown("<hr style='margin: 25px 0 10px 0; border: 1px solid gray;' />", unsafe_allow_html=True)
-
 st.markdown(
     f"""
     <div style='display: flex; align-items: flex-start; gap: 18px; margin-bottom: 0;'>
@@ -165,7 +163,7 @@ col4.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-st.markdown("---")
+st.markdown("<hr style='margin: 25px 0 10px 0; border: 1px solid gray;' />", unsafe_allow_html=True)
 
 # --- Main Chart Section ---
 st.subheader("Asset Chart")
@@ -197,7 +195,7 @@ with col4:
 chart_type = st.radio("Chart Type", ["Line Chart", "Candlestick"], horizontal=True)
 
 # === 2️⃣ Filter Data ===
-prefix = asset_options[asset_choice]
+prefix = asset_options[asset_options]
 price_cols = [f'Open_{prefix}', f'High_{prefix}', f'Low_{prefix}', f'Close_{prefix}']
 volume_col = f'Volume_{prefix}' if f'Volume_{prefix}' in master_df_dashboard.columns else None
 
