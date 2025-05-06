@@ -62,6 +62,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+st.markdown("<hr style='margin-top: 30px; margin-bottom: 10px; border: 1px solid gray;' />", unsafe_allow_html=True)
+
 # With a custom-aligned block like:
 st.markdown("""
 <div style='display: flex; align-items: center; gap: 10px; margin-top: 25px; margin-bottom: 10px;'>
