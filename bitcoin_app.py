@@ -96,6 +96,12 @@ spike_status = "Yes" if volume_spike else "No"
 spike_color = "green" if volume_spike else "white"
 spike_alert = "🚨" if volume_spike else ""
 
+vol_series = master_df_dashboard['Volume_BTC-USD']
+vol_change = 0
+if len(vol_series) >= 2 and vol_series.iloc[-2] != 0:
+    vol_change = ((vol_series.iloc[-1] - vol_series.iloc[-2]) / vol_series.iloc[-2]) * 100
+vol_change_text = f"{vol_change:+.1f}% vs 1D"
+
 # === KPI Cards Layout ===
 col1, col2, col3, col4 = st.columns(4)
 
@@ -163,10 +169,12 @@ col4.markdown(f"""
         height: 100%;
     '>
         <div style='font-weight:600; font-size:1.1rem;'>24h Volume Spike</div>
-        <div style='font-size:2rem; font-weight:700; margin:0.2rem 0; color:{spike_color}'>
+        <div style='font-size:2rem; font-weight:700; margin:0.2rem 0; color:{spike_color};'>
             {spike_status}
         </div>
-        <div style='font-size:0.9rem; color:{spike_color}; font-weight:500'>{spike_alert}</div>
+        <div style='font-size:0.9rem; color:{"green" if vol_change > 0 else "red" if vol_change < 0 else "gray"}; font-weight:500'>
+            {vol_change_text}
+        </div>
     </div>
 """, unsafe_allow_html=True)
 
