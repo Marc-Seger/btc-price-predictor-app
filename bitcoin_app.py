@@ -45,11 +45,11 @@ st.markdown(
         <div style='flex-shrink: 0;'>
             <img src="data:image/png;base64,{bitcoin_logo_base64}" width="70" />
         </div>
-        <div style='display: flex; flex-direction: column; justify-content: center;'>
-            <div style='font-size: 3rem; font-weight: 800; margin-bottom: 8px; color: white;'>
+        <div>
+            <div style='font-size: 3rem; font-weight: 800; color: white; margin-bottom: 6px;'>
                 Bitcoin & Market Intelligence Dashboard
             </div>
-            <div style='font-size: 1.1rem; color: white; margin-bottom: 6px;'>
+            <div style='font-size: 1.1rem; color: white; margin-bottom: 4px;'>
                 An interactive dashboard to monitor Bitcoin, financial markets, and key indicators.
                 <em>(Last updated: {last_updated_date})</em>
             </div>
