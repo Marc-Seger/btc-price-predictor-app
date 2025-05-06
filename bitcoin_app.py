@@ -96,6 +96,80 @@ spike_status = "Yes" if volume_spike else "No"
 spike_color = "green" if volume_spike else "white"
 spike_alert = "🚨" if volume_spike else ""
 
+# === KPI Cards Layout ===
+col1, col2, col3, col4 = st.columns(4)
+
+# --- BTC Price Card ---
+col1.markdown(f"""
+    <div style='
+        background-color: #1e1e1e;
+        padding: 16px;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        text-align: center;
+        height: 100%;
+    '>
+        <div style='font-weight:600; font-size:1.1rem;'>BTC Price</div>
+        <div style='font-size:2rem; font-weight:700; margin:0.2rem 0;'>${btc_price:,.0f}</div>
+        <div style='font-size:0.9rem; color:{btc_color}; font-weight:500'>{btc_text}</div>
+    </div>
+""", unsafe_allow_html=True)
+
+# --- Fear & Greed Card ---
+col2.markdown(f"""
+    <div style='
+        background-color: #1e1e1e;
+        padding: 16px;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        text-align: center;
+        height: 100%;
+    '>
+        <div style='font-weight:600; font-size:1.1rem;'>Fear & Greed Index</div>
+        <div style='font-size:2rem; font-weight:700; margin:0.2rem 0;'>{fng_value:.1f} ({fng_label})</div>
+        <div style='font-size:0.9rem; font-weight:500; display:flex; justify-content:center; gap:12px;'>
+            <span style='color:{fng_1d_color}'>{fng_1d_text}</span>
+            <span style='color:{fng_7d_color}'>{fng_7d_text}</span>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
+
+# --- ETF Flow Card ---
+col3.markdown(f"""
+    <div style='
+        background-color: #1e1e1e;
+        padding: 16px;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        text-align: center;
+        height: 100%;
+    '>
+        <div style='font-weight:600; font-size:1.1rem;'>Last ETF Net Flow</div>
+        <div style='font-size:2rem; font-weight:700; margin:0.2rem 0; color:white'>
+            {latest_etf_net_flow:+,.0f}M USD
+        </div>
+        <div style='font-size:0.9rem; color:gray; font-weight:500'>Latest Daily Value</div>
+    </div>
+""", unsafe_allow_html=True)
+
+# --- Volume Spike Card ---
+col4.markdown(f"""
+    <div style='
+        background-color: #1e1e1e;
+        padding: 16px;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        text-align: center;
+        height: 100%;
+    '>
+        <div style='font-weight:600; font-size:1.1rem;'>24h Volume Spike</div>
+        <div style='font-size:2rem; font-weight:700; margin:0.2rem 0; color:{spike_color}'>
+            {spike_status}
+        </div>
+        <div style='font-size:0.9rem; color:{spike_color}; font-weight:500'>{spike_alert}</div>
+    </div>
+""", unsafe_allow_html=True)
+
 # --- Main Chart Section ---
 st.subheader("Asset Chart")
 
