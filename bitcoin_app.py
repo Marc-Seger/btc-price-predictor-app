@@ -39,26 +39,30 @@ bitcoin_logo_base64 = get_base64_image("images/bitcoin_logo.png")
 # === Refined Logo + Title Alignment ===
 last_updated_date = master_df_dashboard.index.max().strftime("%Y-%m-%d")
 
+# Block 1: Logo + Title
 st.markdown(
     f"""
-    <div style='display: flex; align-items: flex-start; gap: 20px; margin-bottom: 25px;'>
-        <div style='flex-shrink: 0;'>
-            <img src="data:image/png;base64,{bitcoin_logo_base64}" width="70" />
-        </div>
-        <div>
-            <div style='font-size: 3rem; font-weight: 800; color: white; margin-bottom: 6px;'>
-                Bitcoin & Market Intelligence Dashboard
-            </div>
-            <div style='font-size: 1.1rem; color: white; margin-bottom: 4px;'>
-                An interactive dashboard to monitor Bitcoin, financial markets, and key indicators.
-                <em>(Last updated: {last_updated_date})</em>
-            </div>
-            <div style='font-size: 1.1rem; color: white;'>
-                🔮 Looking to forecast Bitcoin price? Try the
-                <a href="https://bitcoin-predictor.streamlit.app/" target="_blank"
-                   style="color: #48b5ff; text-decoration: none;">Bitcoin Price Predictor</a> app!
-            </div>
-        </div>
+    <div style='display: flex; align-items: center; gap: 16px; margin-bottom: 10px;'>
+        <img src="data:image/png;base64,{bitcoin_logo_base64}" width="70" />
+        <h1 style='margin: 0; font-size: 2.8rem;'>Bitcoin & Market Intelligence Dashboard</h1>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# Block 2: Subtitles below, aligned with the left edge of logo
+st.markdown(
+    f"""
+    <div style='margin-left: 86px; margin-bottom: 20px;'>  <!-- 70px width + 16px gap -->
+        <p style='font-size: 1.1rem; margin: 4px 0; color: white;'>
+            An interactive dashboard to monitor Bitcoin, financial markets, and key indicators.
+            <em>(Last updated: {last_updated_date})</em>
+        </p>
+        <p style='font-size: 1.1rem; margin: 4px 0; color: white;'>
+            🔮 Looking to forecast Bitcoin price? Try the
+            <a href="https://bitcoin-predictor.streamlit.app/" target="_blank"
+               style="color: #48b5ff; text-decoration: none;">Bitcoin Price Predictor</a> app!
+        </p>
     </div>
     """,
     unsafe_allow_html=True
