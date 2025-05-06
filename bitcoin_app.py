@@ -39,28 +39,21 @@ bitcoin_logo_base64 = get_base64_image("images/bitcoin_logo.png")
 # === Refined Logo + Title Alignment ===
 last_updated_date = master_df_dashboard.index.max().strftime("%Y-%m-%d")
 
-# Block 1: Logo + Title
+# --- Main Header Block ---
 st.markdown(
     f"""
-    <div style='display: flex; align-items: center; gap: 16px; margin-bottom: 10px;'>
-        <img src="data:image/png;base64,{bitcoin_logo_base64}" width="70" />
-        <h1 style='margin: 0; font-size: 2.8rem;'>Bitcoin & Market Intelligence Dashboard</h1>
+    <div style="width: 100%; display: flex; align-items: center; gap: 18px; margin-bottom: 0;">
+        <img src="data:image/png;base64,{bitcoin_logo_base64}" width="70" style="flex-shrink: 0;" />
+        <h1 style="margin: 0; font-size: 3rem;">Bitcoin & Market Intelligence Dashboard</h1>
     </div>
-    """,
-    unsafe_allow_html=True
-)
-
-# Block 2: Subtitles below, aligned with the left edge of logo
-st.markdown(
-    f"""
-    <div style='margin-left: 86px; margin-bottom: 20px;'>  <!-- 70px width + 16px gap -->
-        <p style='font-size: 1.1rem; margin: 4px 0; color: white;'>
+    <div style="padding-left: 88px; margin-top: 8px;">
+        <p style="font-size: 1.1rem; margin: 0;">
             An interactive dashboard to monitor Bitcoin, financial markets, and key indicators.
             <em>(Last updated: {last_updated_date})</em>
         </p>
-        <p style='font-size: 1.1rem; margin: 4px 0; color: white;'>
+        <p style="font-size: 1.1rem; margin-top: 6px;">
             🔮 Looking to forecast Bitcoin price? Try the
-            <a href="https://bitcoin-predictor.streamlit.app/" target="_blank"
+            <a href="https://bitcoin-predictor.streamlit.app/" target="_blank" 
                style="color: #48b5ff; text-decoration: none;">Bitcoin Price Predictor</a> app!
         </p>
     </div>
