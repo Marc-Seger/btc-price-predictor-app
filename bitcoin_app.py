@@ -48,6 +48,7 @@ st.markdown(
             <p style='margin: 0; font-size: 1rem; color: white;'>
                 An interactive dashboard to monitor Bitcoin, financial markets, and key indicators.
                 <em>(Last updated: {last_updated_date})</em>
+                st.markdown("🔮 Looking to forecast Bitcoin price? Try the [Bitcoin Price Predictor](https://bitcoin-predictor.streamlit.app/) app!")
             </p>
         </div>
     </div>
@@ -149,7 +150,6 @@ col4.markdown(f"""
 """, unsafe_allow_html=True)
 
 st.markdown("---")
-st.markdown("🔮 Looking to forecast Bitcoin price? Try the [Bitcoin Price Predictor](https://bitcoin-predictor.streamlit.app/) app!")
 
 # --- Main Chart Section ---
 st.subheader("Asset Chart")
