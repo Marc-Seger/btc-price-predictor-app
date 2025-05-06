@@ -281,7 +281,7 @@ if "MACD" in indicators:
 
 # === 9️⃣ Layout Settings ===
 fig.update_layout(
-    title=f"{asset_choice} Price Chart",
+    title=f"{asset} Price Chart",
     height=300 + rows * 200,
     xaxis_rangeslider_visible=False,
     showlegend=True
