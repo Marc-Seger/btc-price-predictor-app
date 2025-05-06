@@ -139,14 +139,20 @@ asset_options = {
     "DXY": "DXY"
 }
 
-asset_choice = st.selectbox("Select Asset:", list(asset_options.keys()))
-chart_type = st.radio("Chart Type:", ["Line Chart", "Candlestick"])
-timeframe = st.selectbox("Candle Timeframe:", ["Daily", "Weekly", "Monthly"])
-indicators = st.multiselect("Select Indicators:", [
-    "SMA_9", "SMA_20", "SMA_50", "SMA_200",
-    "EMA_9", "EMA_20", "EMA_50", "EMA_200",
-    "Bollinger Bands", "RSI", "MACD"
-])
+col1, col2, col3 = st.columns(3)
+with col1:
+    asset_choice = st.selectbox("Select Asset", list(asset_options.keys()))
+with col2:
+    timeframe = st.selectbox("Candle Timeframe", ["Daily", "Weekly", "Monthly"])
+with col3:
+    indicators = st.multiselect("Select Indicators", [
+        "SMA_9", "SMA_20", "SMA_50", "SMA_200",
+        "EMA_9", "EMA_20", "EMA_50", "EMA_200",
+        "Bollinger Bands", "RSI", "MACD"
+    ], default=["SMA_50", "SMA_200"])
+
+# Keep chart type on its own row
+chart_type = st.radio("Chart Type", ["Line Chart", "Candlestick"], horizontal=True)
 
 # === 2️⃣ Filter Data ===
 prefix = asset_options[asset_choice]
