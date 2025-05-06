@@ -26,7 +26,16 @@ google_trends.ffill(inplace=True)
 etf_flow = pd.read_csv('data/ETF_Flow_Cleaned.csv', parse_dates=['Date'], index_col='Date')
 
 # --- Header ---
-st.title("📊 Bitcoin & Market Intelligence Dashboard")
+col1, col2 = st.columns([1, 8])
+
+with col1:
+    st.image("images/bitcoin_logo.png", width=50)
+
+with col2:
+    st.markdown("## **Bitcoin & Market Intelligence Dashboard**")
+
+last_updated_date = master_df_dashboard.index.max().strftime("%Y-%m-%d")
+st.markdown(f"An interactive dashboard to monitor Bitcoin, financial markets, and key indicators. _(Last updated: {last_updated_date})_")
 last_updated_date = master_df_dashboard.index.max().strftime("%Y-%m-%d")
 st.markdown(f"An interactive dashboard to monitor Bitcoin, financial markets, and key indicators. _(Last updated: {last_updated_date})_")
 
