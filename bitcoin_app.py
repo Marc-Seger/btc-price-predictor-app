@@ -102,7 +102,7 @@ col1, col2, col3, col4 = st.columns(4)
 # --- BTC Price Card ---
 col1.markdown(f"""
     <div style='
-        background-color: #1e1e1e;
+        background-color: #262730;
         padding: 16px;
         border-radius: 16px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.25);
@@ -118,7 +118,7 @@ col1.markdown(f"""
 # --- Fear & Greed Card ---
 col2.markdown(f"""
     <div style='
-        background-color: #1e1e1e;
+        background-color: #262730;
         padding: 16px;
         border-radius: 16px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.25);
@@ -137,7 +137,7 @@ col2.markdown(f"""
 # --- ETF Flow Card ---
 col3.markdown(f"""
     <div style='
-        background-color: #1e1e1e;
+        background-color: #262730;
         padding: 16px;
         border-radius: 16px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.25);
@@ -155,7 +155,7 @@ col3.markdown(f"""
 # --- Volume Spike Card ---
 col4.markdown(f"""
     <div style='
-        background-color: #1e1e1e;
+        background-color: #262730;
         padding: 16px;
         border-radius: 16px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.25);
