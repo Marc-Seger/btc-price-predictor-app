@@ -60,7 +60,7 @@ st.markdown(
 st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
 
 # === KPI Calculations ===
-btc_series = master_df_dashboard['Close_BTC-USD']
+btc_series = master_df_dashboard['Close_BTC']
 btc_price = btc_series.iloc[-1]
 
 lookback = 2
@@ -302,7 +302,7 @@ if "RSI" in indicators:
 # === 8️⃣ MACD Subplot with BTC Fix ===
 if "MACD" in indicators:
     current_row += 1
-    if prefix == "BTC-USD":
+    if prefix == "BTC":
         macd_col = 'MACD_BTC'
         signal_col = 'Signal_Line_BTC'
     else:
@@ -432,7 +432,7 @@ st.subheader("🚨 Signals & Insights")
 
 # --- Define Asset Prefixes ---
 asset_prefixes = {
-    "BTC": "BTC-USD",
+    "BTC": "BTC",
     "SP500": "SP500",
     "NASDAQ": "NASDAQ",
     "GOLD": "Gold",
