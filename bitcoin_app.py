@@ -22,7 +22,7 @@ google_trends['Date'] = pd.to_datetime(google_trends['Date'])
 google_trends.set_index('Date', inplace=True)
 google_trends.ffill(inplace=True)
 
-etf_flow = pd.read_csv('data/ETF_Flow_Cleaned.csv', parse_dates=['Date'], index_col='Date')
+etf_flow = pd.read_csv('data/etf_flow_raw.csv', parse_dates=['Date'], index_col='Date')
 
 # === Image Load Function ===
 def get_base64_image(image_path):
@@ -75,9 +75,9 @@ else:
     btc_text = f"{btc_change:+.1f}% vs {lookback-1}D"
 btc_color = "green" if btc_change > 0 else "red" if btc_change < 0 else "gray"
 
-fng_value = master_df_dashboard['BTC_index_value'].iloc[-1]
-fng_label = master_df_dashboard['BTC_index_label'].iloc[-1]
-fng_1d = master_df_dashboard['BTC_index_value'].iloc[-2]
+fng_value = master_df_dashboard['Sentiment_BTC_index_value'].iloc[-1]
+fng_label = master_df_dashboard['Sentiment_BTC_index_label'].iloc[-1]
+fng_1d = master_df_dashboard['Sentiment_BTC_index_value'].iloc[-2]
 fng_1d_change = fng_value - fng_1d
 fng_1d_color = "green" if fng_1d_change > 0 else "red" if fng_1d_change < 0 else "gray"
 fng_1d_text = f"{fng_1d_change:+.1f} vs 1D"
@@ -91,7 +91,7 @@ else:
     fng_7d_color = "gray"
 
 # --- Synchronized Volume Spike & % Change ---
-vol_series = master_df_dashboard['Volume_BTC-USD'].dropna()
+vol_series = master_df_dashboard['Volume_BTC'].dropna()
 
 # Use last and second-to-last complete rows
 last_idx = vol_series.index[-1]
@@ -200,10 +200,10 @@ st.subheader("Asset Chart")
 
 # === 1️⃣ Chart Controls ===
 asset_options = {
-    "Bitcoin": "BTC-USD",
+    "Bitcoin": "BTC",
     "S&P 500": "SP500",
     "Nasdaq": "NASDAQ",
-    "Gold": "Gold",
+    "Gold": "GOLD",
     "DXY": "DXY"
 }
 
