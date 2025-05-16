@@ -82,7 +82,7 @@ fng_1d_change = fng_value - fng_1d
 fng_1d_color = "green" if fng_1d_change > 0 else "red" if fng_1d_change < 0 else "gray"
 fng_1d_text = f"{fng_1d_change:+.1f} vs 1D"
 if len(master_df_dashboard) >= 8:
-    fng_7d = master_df_dashboard['BTC_index_value'].iloc[-8]
+    fng_7d = master_df_dashboard['Sentiment_BTC_index_value'].iloc[-8]
     fng_7d_change = fng_value - fng_7d
     fng_7d_color = "green" if fng_7d_change > 0 else "red" if fng_7d_change < 0 else "gray"
     fng_7d_text = f"{fng_7d_change:+.1f} vs 7D"
@@ -585,7 +585,7 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.markdown("### 😨 Bitcoin Fear & Greed Index (14D)")
-    st.line_chart(master_df_dashboard['BTC_index_value'].tail(14))
+    st.line_chart(master_df_dashboard['Sentiment_BTC_index_value'].tail(14))
 
 with col2:
     st.markdown("### 🔎 Google Trends: 'Bitcoin' (1Y)")
