@@ -22,7 +22,7 @@ google_trends['Date'] = pd.to_datetime(google_trends['Date'])
 google_trends.set_index('Date', inplace=True)
 google_trends.ffill(inplace=True)
 
-etf_flow = pd.read_csv('data/etf_flow_raw.csv', parse_dates=['Date'], index_col='Date')
+etf_flow = pd.read_csv('data/etf_flow_cleaned.csv', parse_dates=['Date'], index_col='Date')
 
 # === Image Load Function ===
 def get_base64_image(image_path):
