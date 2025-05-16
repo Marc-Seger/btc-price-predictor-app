@@ -148,9 +148,25 @@ col2.markdown(f"""
 """, unsafe_allow_html=True)
 
 # --- ETF Flow Card ---
+
+# Define the ETF columns to aggregate
+etf_columns = [
+    "ETF_IBIT", "ETF_FBTC", "ETF_BITB", "ETF_ARKB", 
+    "ETF_BTCO", "ETF_EZBC", "ETF_BRRR", "ETF_HODL", 
+    "ETF_BTCW", "ETF_GBTC"
+]
+
+# Calculate the 'Total' column dynamically
+etf_flow['Total'] = etf_flow[etf_columns].sum(axis=1)
+
+# Ensure the calculated 'Total' column is numeric
+etf_flow['Total'] = pd.to_numeric(etf_flow['Total'], errors='coerce')
+
+# Get the latest and previous ETF net flow values
 latest_etf_net_flow = etf_flow['Total'].iloc[-1]
 prev_etf_net_flow = etf_flow['Total'].iloc[-2]
 
+# Calculate % change
 etf_flow_change = ((latest_etf_net_flow - prev_etf_net_flow) / abs(prev_etf_net_flow) * 100) if prev_etf_net_flow != 0 else 0
 etf_flow_change_color = "green" if etf_flow_change > 0 else "red" if etf_flow_change < 0 else "gray"
 etf_flow_change_text = f"{etf_flow_change:+.1f}% vs 1D"
