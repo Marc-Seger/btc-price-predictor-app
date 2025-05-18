@@ -663,42 +663,64 @@ for asset_key, prefix in asset_prefixes.items():
         long_term = "Bearish"
         detailed_data.append([asset_key, "Death Cross", last_death.strftime('%Y-%m-%d')])
 
-    # --- MACD Signal
-    macd_signal_col = f'MACD_Above_Signal_{asset_key}'
-    if macd_signal_col in df.columns:
-        signal_series = df[macd_signal_col]
-        latest = signal_series.iloc[-1]
-        
-        if latest == 1:
-            streak_start = signal_series[::-1].ne(1).idxmax()
-            summary_signals.append("MACD > Signal Line")
+    # --- MACD Daily Signal ---
+    macd_d_signal_col = f'MACD_Above_Signal_D_{asset_key}'
+    if macd_d_signal_col in df.columns:
+        latest_d = df[macd_d_signal_col].iloc[-1]
+        signal_start_d = df[macd_d_signal_col][::-1].ne(latest_d).idxmax()
+
+        if latest_d == 1:
+            summary_signals.append("Daily MACD > Signal")
             mid_term = "Bullish"
-            detailed_data.append([asset_key, "MACD > Signal Line", streak_start.strftime('%Y-%m-%d')])
-        elif latest == 0:
-            streak_start = signal_series[::-1].ne(0).idxmax()
-            summary_signals.append("MACD < Signal Line")
+            detailed_data.append([asset_key, "Daily MACD > Signal", signal_start_d.strftime('%Y-%m-%d')])
+        elif latest_d == 0:
+            summary_signals.append("Daily MACD < Signal")
             mid_term = "Bearish"
-            detailed_data.append([asset_key, "MACD < Signal Line", streak_start.strftime('%Y-%m-%d')])
+            detailed_data.append([asset_key, "Daily MACD < Signal", signal_start_d.strftime('%Y-%m-%d')])
 
-    # --- VWAP Signal
-    vwap_signal_col = f'Price_Above_VWAP_{asset_key}'
-    if vwap_signal_col in df.columns:
-        signal_series = df[vwap_signal_col]
-        latest = signal_series.iloc[-1]
+    # --- MACD Weekly Signal ---
+    macd_w_signal_col = f'MACD_Above_Signal_W_{asset_key}'
+    if macd_w_signal_col in df.columns:
+        latest_w = df[macd_w_signal_col].iloc[-1]
+        signal_start_w = df[macd_w_signal_col][::-1].ne(latest_w).idxmax()
 
-        if latest == 1:
-            streak_start = signal_series[::-1].ne(1).idxmax()
-            summary_signals.append("Price Above VWAP")
+        if latest_w == 1:
+            summary_signals.append("Weekly MACD > Signal")
+            long_term = "Bullish"
+            detailed_data.append([asset_key, "Weekly MACD > Signal", signal_start_w.strftime('%Y-%m-%d')])
+        elif latest_w == 0:
+            summary_signals.append("Weekly MACD < Signal")
+            long_term = "Bearish"
+            detailed_data.append([asset_key, "Weekly MACD < Signal", signal_start_w.strftime('%Y-%m-%d')])
+
+    # --- RSI Overbought/Oversold ---
+    rsi_over_col = f'RSI_Overbought_{asset_key}'
+    rsi_under_col = f'RSI_Oversold_{asset_key}'
+
+    if rsi_over_col in df.columns and df[rsi_over_col].iloc[-1] == 1:
+        summary_signals.append("RSI Overbought")
+        detailed_data.append([asset_key, "RSI Overbought", df.index[-1].strftime('%Y-%m-%d')])
+
+    if rsi_under_col in df.columns and df[rsi_under_col].iloc[-1] == 1:
+        summary_signals.append("RSI Oversold")
+        detailed_data.append([asset_key, "RSI Oversold", df.index[-1].strftime('%Y-%m-%d')])
+
+    # --- OBV Direction ---
+    obv_col = f'OBV_{asset_key}'
+    if obv_col in df.columns:
+        obv_diff = df[obv_col].diff().iloc[-1]
+        if obv_diff > 0:
+            summary_signals.append("OBV Rising")
             short_term = "Bullish"
-            detailed_data.append([asset_key, "Price Above VWAP", streak_start.strftime('%Y-%m-%d')])
-        elif latest == 0:
-            streak_start = signal_series[::-1].ne(0).idxmax()
-            summary_signals.append("Price Below VWAP")
+            detailed_data.append([asset_key, "OBV Rising", df.index[-1].strftime('%Y-%m-%d')])
+        elif obv_diff < 0:
+            summary_signals.append("OBV Falling")
             short_term = "Bearish"
-            detailed_data.append([asset_key, "Price Below VWAP", streak_start.strftime('%Y-%m-%d')])
+            detailed_data.append([asset_key, "OBV Falling", df.index[-1].strftime('%Y-%m-%d')])
 
-    # --- Interpretation (always executed)
+    # --- Interpretation ---
     def map_emoji(val): return "🟢" if val == "Bullish" else "🔴" if val == "Bearish" else "🟠"
+    
     if long_term == short_term == "Bullish":
         interp = f"{map_emoji('Bullish')} Short & Long-Term Bullish"
     elif long_term == short_term == "Bearish":
@@ -713,7 +735,6 @@ for asset_key, prefix in asset_prefixes.items():
     summary_data["Asset"].append(asset_key)
     summary_data["Signal Summary"].append(", ".join(summary_signals) if summary_signals else "No significant signals")
     summary_data["Interpretation"].append(interp)
-
 
 # --- Build DataFrames ---
 summary_df = pd.DataFrame(summary_data)
