@@ -439,7 +439,7 @@ if "Stochastic" in indicators:
         ), row=current_row, col=1)
         fig.update_yaxes(title_text="Stochastic", row=current_row, col=1, range=[0, 100])
 
-# === 🔟 Layout Settings ===
+# === 1️⃣1️⃣ Layout Settings ===
 fig.update_layout(
     title=f"{asset} Price Chart with Indicators",
     height=400 + rows * 150,
@@ -448,72 +448,7 @@ fig.update_layout(
     template="plotly_dark"
 )
 
-# === 🔟 Display Chart ===
-st.plotly_chart(fig, use_container_width=True)
-
-# === 5️⃣ Main Price Chart ===
-if chart_type == "Candlestick":
-    fig.add_trace(go.Candlestick(
-        x=df_plot.index,
-        open=df_plot[price_cols[0]],
-        high=df_plot[price_cols[1]],
-        low=df_plot[price_cols[2]],
-        close=df_plot[price_cols[3]],
-        name="Price"
-    ), row=current_row, col=1)
-else:
-    fig.add_trace(go.Scatter(
-        x=df_plot.index,
-        y=df_plot[price_cols[3]],
-        mode='lines',
-        name='Close Price'
-    ), row=current_row, col=1)
-
-# === 6️⃣ Overlay Indicators ===
-for ind in indicators:
-    if ind.startswith("SMA") or ind.startswith("EMA"):
-        col_name = f"{ind}_Close_{prefix}"
-        if col_name in master_df_dashboard.columns:
-            fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[col_name], name=ind), row=1, col=1)
-    if ind == "Bollinger Bands":
-        upper = f'Upper_Band_Close_{prefix}'
-        lower = f'Lower_Band_Close_{prefix}'
-        if upper in master_df_dashboard.columns and lower in master_df_dashboard.columns:
-            fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[upper], name='Upper Band', line=dict(dash='dot')), row=1, col=1)
-            fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[lower], name='Lower Band', line=dict(dash='dot')), row=1, col=1)
-
-# === 7️⃣ RSI Subplot ===
-if "RSI" in indicators:
-    current_row += 1
-    rsi_col = f'RSI_Close_{prefix}'
-    if rsi_col in master_df_dashboard.columns:
-        fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[rsi_col], name="RSI", line=dict(color='orange')), row=current_row, col=1)
-        fig.update_yaxes(title_text="RSI", row=current_row, col=1, range=[0, 100])
-
-# === 8️⃣ MACD Subplot with BTC Fix ===
-if "MACD" in indicators:
-    current_row += 1
-    if prefix == "BTC":
-        macd_col = 'MACD_BTC'
-        signal_col = 'Signal_Line_BTC'
-    else:
-        macd_col = f'MACD_{prefix}'
-        signal_col = f'Signal_Line_{prefix}'
-
-    if macd_col in master_df_dashboard.columns and signal_col in master_df_dashboard.columns:
-        fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[macd_col], name="MACD", line=dict(color='purple')), row=current_row, col=1)
-        fig.add_trace(go.Scatter(x=master_df_dashboard.index, y=master_df_dashboard[signal_col], name="Signal", line=dict(color='gray', dash='dot')), row=current_row, col=1)
-        fig.update_yaxes(title_text="MACD", row=current_row, col=1)
-
-# === 9️⃣ Layout Settings ===
-fig.update_layout(
-    title=f"{asset} Price Chart",
-    height=300 + rows * 200,
-    xaxis_rangeslider_visible=False,
-    showlegend=True
-)
-
-# === 🔟 Display Chart ===
+# === 1️⃣2️⃣ Display Chart ===
 st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True})
 
 st.markdown("---")
@@ -619,188 +554,150 @@ st.markdown("---")
 # =========================================
 # 🚨 Signals & Insights
 # =========================================
-st.subheader("🚨 Signals & Insights")
+from datetime import timedelta
 
-# --- Define Asset Prefixes ---
-asset_prefixes = {
-    "BTC": "BTC",
-    "SP500": "SP500",
-    "NASDAQ": "NASDAQ",
-    "GOLD": "Gold",
-    "DXY": "DXY"
+# === 1️⃣ Decay Functions & Configuration ===
+def square_root_decay(age, half_life):
+    return max(0, (1 - (age / half_life)**0.5))
+
+def exponential_decay(age, half_life):
+    return max(0, (0.5)**(age / half_life))
+
+def linear_decay(age, half_life):
+    return max(0, 1 - (age / half_life))
+
+decay_params = {
+    "Golden/Death Cross": {"decay_func": square_root_decay, "half_life": 90},
+    "Weekly MACD": {"decay_func": exponential_decay, "half_life": 60},
+    "Daily MACD": {"decay_func": linear_decay, "half_life": 21},
+    "RSI Signal": {"decay_func": linear_decay, "half_life": 21},
+    "OBV": {"decay_func": linear_decay, "half_life": 14}
 }
 
-def get_asset_data(asset_key):
-    prefix = asset_prefixes[asset_key]
-    cols = [col for col in master_df_dashboard.columns if f'_{prefix}' in col or col.startswith(f'{prefix}')]
-    return master_df_dashboard[cols].copy()
+# === 2️⃣ Extract Signals Dynamically ===
 
-# --- Collect Signal Info ---
-summary_data = {"Asset": [], "Signal Summary": [], "Interpretation": []}
-detailed_data = []
+def extract_signals(df, asset_key):
+    signals = []
+    prefix = asset_key
 
-for asset_key, prefix in asset_prefixes.items():
-    df = get_asset_data(asset_key)
-    long_term = mid_term = short_term = "Neutral"
-    summary_signals = []
-
-    # --- Golden/Death Cross Events ---
-    golden_col = f'Golden_Cross_Event_{asset_key}'
-    death_col = f'Death_Cross_Event_{asset_key}'
-
-    golden_dates = df[df[golden_col] == 1].index if golden_col in df.columns else []
-    death_dates = df[df[death_col] == 1].index if death_col in df.columns else []
-
-    last_golden = golden_dates[-1] if len(golden_dates) > 0 else None
-    last_death = death_dates[-1] if len(death_dates) > 0 else None
-
-    if last_golden and (not last_death or last_golden > last_death):
-        summary_signals.append("Golden Cross")
-        long_term = "Bullish"
-        detailed_data.append([asset_key, "Golden Cross", last_golden.strftime('%Y-%m-%d')])
-    elif last_death:
-        summary_signals.append("Death Cross")
-        long_term = "Bearish"
-        detailed_data.append([asset_key, "Death Cross", last_death.strftime('%Y-%m-%d')])
-
-    # --- MACD Daily Signal ---
-    macd_d_signal_col = f'MACD_Above_Signal_D_{asset_key}'
-    if macd_d_signal_col in df.columns:
-        latest_d = df[macd_d_signal_col].iloc[-1]
-        signal_start_d = df[macd_d_signal_col][::-1].ne(latest_d).idxmax()
-
-        if latest_d == 1:
-            summary_signals.append("Daily MACD > Signal")
-            mid_term = "Bullish"
-            detailed_data.append([asset_key, "Daily MACD > Signal", signal_start_d.strftime('%Y-%m-%d')])
-        elif latest_d == 0:
-            summary_signals.append("Daily MACD < Signal")
-            mid_term = "Bearish"
-            detailed_data.append([asset_key, "Daily MACD < Signal", signal_start_d.strftime('%Y-%m-%d')])
-
-    # --- MACD Weekly Signal ---
-    macd_w_signal_col = f'MACD_Above_Signal_W_{asset_key}'
-    if macd_w_signal_col in df.columns:
-        latest_w = df[macd_w_signal_col].iloc[-1]
-        signal_start_w = df[macd_w_signal_col][::-1].ne(latest_w).idxmax()
-
-        if latest_w == 1:
-            summary_signals.append("Weekly MACD > Signal")
-            long_term = "Bullish"
-            detailed_data.append([asset_key, "Weekly MACD > Signal", signal_start_w.strftime('%Y-%m-%d')])
-        elif latest_w == 0:
-            summary_signals.append("Weekly MACD < Signal")
-            long_term = "Bearish"
-            detailed_data.append([asset_key, "Weekly MACD < Signal", signal_start_w.strftime('%Y-%m-%d')])
-
-    # --- RSI Overbought/Oversold ---
-    rsi_over_col = f'RSI_Overbought_{asset_key}'
-    rsi_under_col = f'RSI_Oversold_{asset_key}'
-
-    if rsi_over_col in df.columns and df[rsi_over_col].iloc[-1] == 1:
-        summary_signals.append("RSI Overbought")
-        detailed_data.append([asset_key, "RSI Overbought", df.index[-1].strftime('%Y-%m-%d')])
-
-    if rsi_under_col in df.columns and df[rsi_under_col].iloc[-1] == 1:
-        summary_signals.append("RSI Oversold")
-        detailed_data.append([asset_key, "RSI Oversold", df.index[-1].strftime('%Y-%m-%d')])
-
-    # --- OBV Direction ---
-    obv_col = f'OBV_{asset_key}'
-    if obv_col in df.columns:
-        obv_diff = df[obv_col].diff().iloc[-1]
-        if obv_diff > 0:
-            summary_signals.append("OBV Rising")
-            short_term = "Bullish"
-            detailed_data.append([asset_key, "OBV Rising", df.index[-1].strftime('%Y-%m-%d')])
-        elif obv_diff < 0:
-            summary_signals.append("OBV Falling")
-            short_term = "Bearish"
-            detailed_data.append([asset_key, "OBV Falling", df.index[-1].strftime('%Y-%m-%d')])
-
-    # --- Interpretation ---
-    def map_emoji(val): return "🟢" if val == "Bullish" else "🔴" if val == "Bearish" else "🟠"
+    # Golden/Death Cross Events
+    golden_col = f'Golden_Cross_Event_{prefix}'
+    death_col = f'Death_Cross_Event_{prefix}'
     
-    if long_term == short_term == "Bullish":
-        interp = f"{map_emoji('Bullish')} Short & Long-Term Bullish"
-    elif long_term == short_term == "Bearish":
-        interp = f"{map_emoji('Bearish')} Short & Long-Term Bearish"
-    elif short_term == "Bullish" and long_term == "Bearish":
-        interp = f"🟠 Short-Term Bullish, Long-Term Bearish"
-    elif short_term == "Bearish" and long_term == "Bullish":
-        interp = f"🟠 Short-Term Bearish, Long-Term Bullish"
-    else:
-        interp = f"🟠 Mixed Signals – Monitor Closely"
+    if golden_col in df.columns:
+        for date in df[df[golden_col] == 1].index:
+            signals.append({"type": "Golden/Death Cross", "date": date, "weight": +3})
 
-    summary_data["Asset"].append(asset_key)
-    summary_data["Signal Summary"].append(", ".join(summary_signals) if summary_signals else "No significant signals")
-    summary_data["Interpretation"].append(interp)
+    if death_col in df.columns:
+        for date in df[df[death_col] == 1].index:
+            signals.append({"type": "Golden/Death Cross", "date": date, "weight": -3})
 
-# --- Build DataFrames ---
-summary_df = pd.DataFrame(summary_data)
-detailed_df = pd.DataFrame(detailed_data, columns=["Asset", "Signal Type", "Date"])
+    # MACD Signals
+    macd_d_col = f'MACD_Above_Signal_D_{prefix}'
+    macd_w_col = f'MACD_Above_Signal_W_{prefix}'
+    
+    if macd_d_col in df.columns:
+        for date, value in df[macd_d_col].iteritems():
+            weight = +1 if value == 1 else -1
+            signals.append({"type": "Daily MACD", "date": date, "weight": weight})
+    
+    if macd_w_col in df.columns:
+        for date, value in df[macd_w_col].iteritems():
+            weight = +2 if value == 1 else -2
+            signals.append({"type": "Weekly MACD", "date": date, "weight": weight})
 
-# --- Bitcoin Sentiment Box (ETF style)
-btc_df = detailed_df[detailed_df["Asset"] == "BTC"]
-btc_bull = btc_df["Signal Type"].isin(["Golden Cross", "MACD > Signal Line", "Price Above VWAP"]).sum()
-btc_bear = btc_df["Signal Type"].isin(["Death Cross", "MACD < Signal Line", "Price Below VWAP"]).sum()
+    # RSI Signals
+    rsi_over_col = f'RSI_Overbought_{prefix}'
+    rsi_under_col = f'RSI_Oversold_{prefix}'
+    
+    if rsi_over_col in df.columns:
+        for date in df[df[rsi_over_col] == 1].index:
+            signals.append({"type": "RSI Signal", "date": date, "weight": -1})
 
-if btc_bull > btc_bear:
-    st.info(f"📢 Bitcoin Sentiment Based on Signals: **Bullish Bias** ({btc_bull} bullish, {btc_bear} bearish signals detected)")
-elif btc_bear > btc_bull:
-    st.info(f"📢 Bitcoin Sentiment Based on Signals: **Bearish Bias** ({btc_bull} bullish, {btc_bear} bearish signals detected)")
-else:
-    st.info(f"📢 Bitcoin Sentiment Based on Signals: **Neutral Bias** ({btc_bull} bullish, {btc_bear} bearish signals detected)")
+    if rsi_under_col in df.columns:
+        for date in df[df[rsi_under_col] == 1].index:
+            signals.append({"type": "RSI Signal", "date": date, "weight": +1})
 
-# --- Market Sentiment Box (ETF style)
-bullish_assets = detailed_df[detailed_df["Signal Type"].isin(["Golden Cross", "MACD > Signal Line"])]["Asset"].unique()
-bearish_assets = detailed_df[detailed_df["Signal Type"].isin(["Death Cross", "MACD < Signal Line"])]["Asset"].unique()
+    # OBV Direction
+    obv_col = f'OBV_{prefix}'
+    if obv_col in df.columns:
+        for date, value in df[obv_col].diff().iteritems():
+            weight = +1 if value > 0 else -1
+            signals.append({"type": "OBV", "date": date, "weight": weight})
 
-if len(bullish_assets) > len(bearish_assets):
-    st.success(f"📢 Market Sentiment Based on Signals: **Bullish Bias** ({len(bullish_assets)} bullish signals: {', '.join(bullish_assets)})")
-elif len(bearish_assets) > len(bullish_assets):
-    st.error(f"📢 Market Sentiment Based on Signals: **Bearish Bias** ({len(bearish_assets)} bearish signals: {', '.join(bearish_assets)})")
-else:
-    st.info("📢 Market Sentiment Based on Signals: **Neutral Bias**")
+    return signals
 
-# --- Summary Table ---
+# Collect signals for each asset
+all_signals = []
+for asset_key in ["BTC", "SP500", "NASDAQ", "GOLD", "DXY"]:
+    asset_df = master_df_dashboard[[col for col in master_df_dashboard.columns if asset_key in col]]
+    asset_signals = extract_signals(asset_df, asset_key)
+    all_signals.extend(asset_signals)
+
+# === 3️⃣ Compute Sentiment Scores ===
+
+def calculate_signal_weight(signal_date, signal_type):
+    age = (datetime.datetime.now() - signal_date).days
+    if signal_type in decay_params:
+        decay_func = decay_params[signal_type]["decay_func"]
+        half_life = decay_params[signal_type]["half_life"]
+        return decay_func(age, half_life)
+    return 0
+
+def compute_sentiment_score(signals):
+    score = 0
+    for signal in signals:
+        weight = signal["weight"]
+        date = signal["date"]
+        signal_type = signal["type"]
+        score += weight * calculate_signal_weight(date, signal_type)
+    return score
+
+# Calculate Net Sentiment Scores
+btc_signals = [s for s in all_signals if "BTC" in s["type"]]
+btc_sentiment = compute_sentiment_score(btc_signals)
+
+market_signals = [s for s in all_signals]
+market_sentiment = compute_sentiment_score(market_signals)
+
+# === 4️⃣ Display Sentiment Boxes ===
+
+st.markdown("### 📢 Bitcoin Sentiment Based on Signals")
+st.info(f"Bitcoin Bias: {'Bullish' if btc_sentiment > 0 else 'Bearish'} ({btc_sentiment:.2f})")
+
+st.markdown("### 📢 Market Sentiment Based on Signals")
+st.warning(f"Market Bias: {'Bullish' if market_sentiment > 0 else 'Bearish'} ({market_sentiment:.2f})")
+
+# === 5️⃣ Technical Signals Summary ===
 st.markdown("### 📊 Technical Signals Summary")
-st.dataframe(summary_df, hide_index=True)
 
-# --- Explore Detailed Signals ---
-st.markdown("### Explore Detailed Signals")
-asset_select = st.selectbox("Select Asset", ["All"] + list(asset_prefixes.keys()))
-filtered_df = detailed_df if asset_select == "All" else detailed_df[detailed_df["Asset"] == asset_select]
-st.dataframe(filtered_df, hide_index=True)
+# Construct DataFrame for summary
+signal_summary = pd.DataFrame(all_signals)
+if not signal_summary.empty:
+    st.dataframe(signal_summary)
 
-# --- Signal Legend ---
-active_signals = detailed_df["Signal Type"].unique()
+# === 6️⃣ Signal Legend ===
+st.markdown("### 📚 Signal Legend")
 signal_explanations = {
-    "Golden Cross": "50-day SMA crossing above 200-day SMA → Bullish momentum confirmation.",
-    "Death Cross": "50-day SMA crossing below 200-day SMA → Bearish momentum confirmation.",
-    "MACD > Signal Line": "MACD line (12,26,9) crossing above Signal Line → Positive trend momentum.",
-    "MACD < Signal Line": "MACD line (12,26,9) crossing below Signal Line → Negative trend momentum.",
-    "Price Above VWAP": "Price closing above 30-day VWAP → Short-term bullish strength.",
-    "Price Below VWAP": "Price closing below 30-day VWAP → Short-term bearish weakness."
+    "Golden/Death Cross": "Trend shifts based on moving average crossovers.",
+    "Weekly MACD": "Momentum indicator based on weekly MACD.",
+    "Daily MACD": "Momentum indicator based on daily MACD.",
+    "RSI Signal": "Identifies overbought/oversold conditions.",
+    "OBV": "Volume-based trend confirmation."
 }
+for signal, explanation in signal_explanations.items():
+    st.markdown(f"**{signal}:** {explanation}")
 
-if active_signals.any():
-    st.markdown("### 📚 Signal Legend")
-    for signal in active_signals:
-        if signal in signal_explanations:
-            st.markdown(f"**{signal}:** {signal_explanations[signal]}")
+# === 7️⃣ Market Sentiment Overview (FNG + Google Trends) ===
+st.markdown("### 🌐 Market Sentiment Overview")
 
-# =========================
-# 😨 Sentiment Section
-# =========================
 col1, col2 = st.columns(2)
-
 with col1:
     st.markdown("### 😨 Bitcoin Fear & Greed Index (14D)")
     st.line_chart(master_df_dashboard['Sentiment_BTC_index_value'].tail(14))
 
 with col2:
-    st.markdown("### 🔎 Google Trends: 'Bitcoin' (1Y)")
+    st.markdown("### 🔍 Google Trends: 'Bitcoin' (1Y)")
     st.line_chart(google_trends['GT_index_bitcoin'].tail(13))
 
 st.markdown("---")
