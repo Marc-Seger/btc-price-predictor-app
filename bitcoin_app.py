@@ -237,10 +237,27 @@ with col3:
 with col4:
     indicators = st.multiselect(
         "Select Indicators",
-        ["SMA_20", "SMA_50", "SMA_200", "EMA_20", "EMA_50"],
-        default=["SMA_50", "SMA_200"],
+        [
+            # Moving Averages
+            "SMA_20", "SMA_50", "SMA_200", 
+            "EMA_9", "EMA_20", "EMA_50", "EMA_200", 
+            # MACD (Daily and Weekly)
+            "MACD_D", "Signal_Line_D", "MACD_Histogram_D",
+            "MACD_W", "Signal_Line_W", "MACD_Histogram_W",
+            # RSI
+            "RSI",
+            # Bollinger Bands
+            "Bollinger Bands",
+            # Stochastic Oscillator
+            "Stochastic (%K, %D)",
+            # VWAP
+            "VWAP",
+            # OBV
+            "OBV"
+        ],
+        default=["SMA_50", "SMA_200"],  # Default selection
         key="indicator_select"
-    )  # Default to SMA 50 & 200
+    )
 
 # === 2️⃣ Filter Data ===
 prefix = asset_options[asset]
