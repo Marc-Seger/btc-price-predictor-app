@@ -667,18 +667,93 @@ market_multi_day, market_daily = compute_sentiment_scores(market_signals)
 # Compute Market Sentiment as the average of all non-BTC assets
 market_sentiment = (market_multi_day + market_daily) / 2
 
-# Display Updated Sentiment Scores
-st.markdown(f"### 📢 Bitcoin Multi-Day Sentiment: {btc_multi_day:.2f}")
-st.markdown(f"### 📢 Bitcoin Daily Sentiment: {btc_daily:.2f}")
-st.markdown(f"### 📢 Market Sentiment: {market_sentiment:.2f}")
+# Determine Bias
+def get_bias_text(score):
+    if score > 0.5:
+        return "Bullish"
+    elif score < -0.5:
+        return "Bearish"
+    else:
+        return "Mixed"
+
+btc_multi_day_text = get_bias_text(btc_multi_day)
+btc_daily_text = get_bias_text(btc_daily)
+market_sentiment_text = get_bias_text(market_sentiment)
+
+# Display Sentiment Overview
+st.markdown(f"### 📢 Bitcoin Multi-Day Sentiment: {btc_multi_day_text}")
+st.markdown(f"### 📢 Bitcoin Daily Sentiment: {btc_daily_text}")
+st.markdown(f"### 📢 Market Sentiment: {market_sentiment_text}")
 
 # === 5️⃣ Technical Signals Summary ===
-st.markdown("### 📊 Technical Signals Summary")
+# Summary Logic
+def summarize_signals(signals):
+    summary = {
+        "Golden/Death Cross": [],
+        "Weekly MACD": [],
+        "Daily MACD": [],
+        "RSI": [],
+        "OBV Mean": []
+    }
 
-# Construct DataFrame for summary
-signal_summary = pd.DataFrame(all_signals)
-if not signal_summary.empty:
-    st.dataframe(signal_summary)
+    # Filter signals by type
+    for signal in signals:
+        signal_type = signal["type"]
+        if signal_type in summary:
+            summary[signal_type].append(signal["weight"])
+
+    # Calculate mean OBV
+    obv_scores = [s["weight"] for s in signals if s["type"] == "OBV"]
+    summary["OBV Mean"] = [np.mean(obv_scores)] if obv_scores else ["N/A"]
+
+    # Keep latest occurrences for other signals
+    for key in ["Golden/Death Cross", "Weekly MACD", "Daily MACD", "RSI"]:
+        if summary[key]:
+            summary[key] = [summary[key][-1]]
+        else:
+            summary[key] = ["N/A"]
+
+    return pd.DataFrame(summary)
+
+# Display the updated summary table
+st.markdown("### 📊 Technical Signals Summary")
+summary_df = summarize_signals(all_signals)
+st.dataframe(summary_df)
+
+# Asset-Wise Summary
+def asset_wise_summary(signals):
+    assets = ["BTC", "SP500", "NASDAQ", "GOLD", "DXY"]
+    asset_summary = []
+
+    for asset in assets:
+        asset_signals = [s for s in signals if s["asset"] == asset]
+        if not asset_signals:
+            continue
+
+        # Calculate mean OBV
+        obv_scores = [s["weight"] for s in asset_signals if s["type"] == "OBV"]
+        obv_mean = np.mean(obv_scores) if obv_scores else "N/A"
+
+        # Last signals
+        latest_cross = next((s["date"] for s in asset_signals if s["type"] == "Golden/Death Cross"), "N/A")
+        latest_macd = next((s["date"] for s in asset_signals if s["type"] in ["Daily MACD", "Weekly MACD"]), "N/A")
+        latest_rsi = next((s["date"] for s in asset_signals if s["type"] == "RSI Signal"), "N/A")
+
+        asset_summary.append({
+            "Asset": asset,
+            "OBV Mean": obv_mean,
+            "Last Cross": latest_cross,
+            "Last MACD": latest_macd,
+            "Last RSI": latest_rsi
+        })
+
+    return pd.DataFrame(asset_summary)
+
+# Display Asset-Wise Summary
+st.markdown("### 📊 Asset-Wise Signals Overview")
+asset_summary_df = asset_wise_summary(all_signals)
+st.dataframe(asset_summary_df)
+
 
 # === 6️⃣ Signal Legend ===
 st.markdown("### 📚 Signal Legend")
