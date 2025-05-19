@@ -586,59 +586,25 @@ def extract_signals(df, asset_key, selected_days):
     signals = []
     prefix = asset_key
 
-    # Calculate start date based on selected timeframe
     start_date = datetime.datetime.now() - pd.Timedelta(days=selected_days)
 
-    # Golden/Death Cross Events
-    golden_col = f'Golden_Cross_Event_{prefix}'
-    death_col = f'Death_Cross_Event_{prefix}'
-    
-    if golden_col in df.columns:
-        for date in df[df[golden_col] == 1].index:
-            if date >= start_date:
-                signals.append({"type": "Golden/Death Cross", "date": date, "weight": +3, "asset": asset_key})
+    # Multi-Day Signals
+    multi_day_signals = ["Golden/Death Cross", "Weekly MACD", "Daily MACD", "RSI Signal"]
+    multi_day_weights = {"Golden/Death Cross": 3, "Weekly MACD": 2, "Daily MACD": 1, "RSI Signal": 1}
 
-    if death_col in df.columns:
-        for date in df[df[death_col] == 1].index:
-            if date >= start_date:
-                signals.append({"type": "Golden/Death Cross", "date": date, "weight": -3, "asset": asset_key})
+    for signal_type in multi_day_signals:
+        col_name = f"{signal_type.replace(' ', '_')}_{prefix}"
+        if col_name in df.columns:
+            for date in df[df[col_name] == 1].index:
+                if date >= start_date:
+                    signals.append({"type": signal_type, "date": date, "weight": multi_day_weights[signal_type], "asset": asset_key})
 
-    # MACD Signals
-    macd_d_col = f'MACD_Above_Signal_D_{prefix}'
-    macd_w_col = f'MACD_Above_Signal_W_{prefix}'
-    
-    if macd_d_col in df.columns:
-        for date, value in df[macd_d_col].items():
-            if date >= start_date:
-                weight = +1 if value == 1 else -1
-                signals.append({"type": "Daily MACD", "date": date, "weight": weight, "asset": asset_key})
-    
-    if macd_w_col in df.columns:
-        for date, value in df[macd_w_col].items():
-            if date >= start_date:
-                weight = +2 if value == 1 else -2
-                signals.append({"type": "Weekly MACD", "date": date, "weight": weight, "asset": asset_key})
-
-    # RSI Signals
-    rsi_over_col = f'RSI_Overbought_{prefix}'
-    rsi_under_col = f'RSI_Oversold_{prefix}'
-    
-    if rsi_over_col in df.columns:
-        for date in df[df[rsi_over_col] == 1].index:
-            if date >= start_date:
-                signals.append({"type": "RSI Signal", "date": date, "weight": -1, "asset": asset_key})
-
-    if rsi_under_col in df.columns:
-        for date in df[df[rsi_under_col] == 1].index:
-            if date >= start_date:
-                signals.append({"type": "RSI Signal", "date": date, "weight": +1, "asset": asset_key})
-
-    # OBV as a daily signal
+    # Daily Signal - OBV
     obv_col = f'OBV_{prefix}'
     if obv_col in df.columns:
         for date, value in df[obv_col].diff().items():
             if date >= start_date:
-                weight = +1 if value > 0 else -1
+                weight = 1 if value > 0 else -1
                 signals.append({"type": "OBV", "date": date, "weight": weight, "asset": asset_key})
 
     return signals
@@ -653,28 +619,59 @@ for asset_key in ["BTC", "SP500", "NASDAQ", "GOLD", "DXY"]:
 
 # === 3️⃣ Compute Sentiment Scores ===
 
-def calculate_signal_weight(signal_date, signal_type):
+def calculate_signal_weight(signal_date, signal_type, decay_type="multi_day"):
     age = (datetime.datetime.now() - signal_date).days
     decay_factor = decay_params[signal_type]["decay_factor"]
-    return max(0, decay_factor ** age)
 
-def compute_sentiment_score(signals):
-    score = 0
+    if decay_type == "multi_day":
+        return max(0, decay_factor ** age)
+    elif decay_type == "daily":
+        return 1  # Daily signals have a constant weight (OBV)
+    return 0
+
+
+def compute_mean_score(signals, decay_type):
+    if not signals:
+        return 0
+    
+    total_weight = 0
+    total_days = len(signals)
+
     for signal in signals:
         weight = signal["weight"]
         date = signal["date"]
         signal_type = signal["type"]
-        decay_weight = calculate_signal_weight(date, signal_type)
-        score += weight * decay_weight
-    return score
+        decay_weight = calculate_signal_weight(date, signal_type, decay_type)
+        total_weight += weight * decay_weight
+    
+    return total_weight / total_days if total_days > 0 else 0
 
-# Calculate Net Sentiment Scores
-btc_signals = [s for s in all_signals if s["asset"] == "BTC"]
-market_signals = all_signals  # No filtering; we want all assets
+def compute_sentiment_scores(signals):
+    # Separate signals by type
+    multi_day_signals = [s for s in signals if s["type"] != "OBV"]
+    daily_signals = [s for s in signals if s["type"] == "OBV"]
+
+    # Compute mean scores
+    mean_multi_day = compute_mean_score(multi_day_signals, "multi_day")
+    mean_daily = compute_mean_score(daily_signals, "daily")
+
+    return mean_multi_day, mean_daily
 
 # Calculate sentiment scores
-btc_sentiment = compute_sentiment_score(btc_signals)
-market_sentiment = compute_sentiment_score(market_signals)
+btc_signals = [s for s in all_signals if s["asset"] == "BTC"]
+market_signals = [s for s in all_signals if s["asset"] != "BTC"]
+
+btc_multi_day, btc_daily = compute_sentiment_scores(btc_signals)
+market_multi_day, market_daily = compute_sentiment_scores(market_signals)
+
+# Compute Market Sentiment as the average of all non-BTC assets
+market_sentiment = (market_multi_day + market_daily) / 2
+
+# Display Updated Sentiment Scores
+st.markdown(f"### 📢 Bitcoin Multi-Day Sentiment: {btc_multi_day:.2f}")
+st.markdown(f"### 📢 Bitcoin Daily Sentiment: {btc_daily:.2f}")
+st.markdown(f"### 📢 Market Sentiment: {market_sentiment:.2f}")
+
 
 st.markdown(f"### 📢 Bitcoin Sentiment Over {selected_days} Days")
 st.info(f"Bitcoin Bias: {'Bullish' if btc_sentiment > 0 else 'Bearish'} ({btc_sentiment:.2f})")
