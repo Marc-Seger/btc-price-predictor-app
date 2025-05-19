@@ -556,29 +556,38 @@ st.markdown("---")
 # =========================================
 from datetime import timedelta
 
-# === 1️⃣ Decay Functions & Configuration ===
-def square_root_decay(age, half_life):
-    return max(0, (1 - (age / half_life)**0.5))
-
-def exponential_decay(age, half_life):
-    return max(0, (0.5)**(age / half_life))
-
-def linear_decay(age, half_life):
-    return max(0, 1 - (age / half_life))
-
 decay_params = {
-    "Golden/Death Cross": {"decay_func": square_root_decay, "half_life": 90},
-    "Weekly MACD": {"decay_func": exponential_decay, "half_life": 60},
-    "Daily MACD": {"decay_func": linear_decay, "half_life": 21},
-    "RSI Signal": {"decay_func": linear_decay, "half_life": 21},
-    "OBV": {"decay_func": linear_decay, "half_life": 14}
+    "Golden/Death Cross": {"decay_factor": 0.9845},
+    "Weekly MACD": {"decay_factor": 0.995},
+    "Daily MACD": {"decay_factor": 0.98},
+    "RSI Signal": {"decay_factor": 0.97},
+    "OBV": {"decay_factor": 1.0}  # No decay, daily signal
 }
+
+# === 🕒 Sentiment Timeframe Toggler ===
+st.markdown("### 🕒 Sentiment Analysis Timeframe")
+timeframe_option = st.selectbox(
+    "Select Sentiment Analysis Period:",
+    options=["30 Days", "90 Days", "180 Days"],
+    index=0  # Default to "30 Days"
+)
+
+# Map timeframe selection to actual days
+timeframe_map = {
+    "30 Days": 30,
+    "90 Days": 90,
+    "180 Days": 180
+}
+selected_days = timeframe_map[timeframe_option]
 
 # === 2️⃣ Extract Signals Dynamically ===
 
-def extract_signals(df, asset_key):
+def extract_signals(df, asset_key, selected_days):
     signals = []
     prefix = asset_key
+
+    # Calculate start date based on selected timeframe
+    start_date = datetime.datetime.now() - pd.Timedelta(days=selected_days)
 
     # Golden/Death Cross Events
     golden_col = f'Golden_Cross_Event_{prefix}'
@@ -586,11 +595,13 @@ def extract_signals(df, asset_key):
     
     if golden_col in df.columns:
         for date in df[df[golden_col] == 1].index:
-            signals.append({"type": "Golden/Death Cross", "date": date, "weight": +3, "asset": asset_key})
+            if date >= start_date:
+                signals.append({"type": "Golden/Death Cross", "date": date, "weight": +3, "asset": asset_key})
 
     if death_col in df.columns:
         for date in df[df[death_col] == 1].index:
-            signals.append({"type": "Golden/Death Cross", "date": date, "weight": -3, "asset": asset_key})
+            if date >= start_date:
+                signals.append({"type": "Golden/Death Cross", "date": date, "weight": -3, "asset": asset_key})
 
     # MACD Signals
     macd_d_col = f'MACD_Above_Signal_D_{prefix}'
@@ -598,13 +609,15 @@ def extract_signals(df, asset_key):
     
     if macd_d_col in df.columns:
         for date, value in df[macd_d_col].items():
-            weight = +1 if value == 1 else -1
-            signals.append({"type": "Daily MACD", "date": date, "weight": weight, "asset": asset_key})
+            if date >= start_date:
+                weight = +1 if value == 1 else -1
+                signals.append({"type": "Daily MACD", "date": date, "weight": weight, "asset": asset_key})
     
     if macd_w_col in df.columns:
         for date, value in df[macd_w_col].items():
-            weight = +2 if value == 1 else -2
-            signals.append({"type": "Weekly MACD", "date": date, "weight": weight, "asset": asset_key})
+            if date >= start_date:
+                weight = +2 if value == 1 else -2
+                signals.append({"type": "Weekly MACD", "date": date, "weight": weight, "asset": asset_key})
 
     # RSI Signals
     rsi_over_col = f'RSI_Overbought_{prefix}'
@@ -612,37 +625,38 @@ def extract_signals(df, asset_key):
     
     if rsi_over_col in df.columns:
         for date in df[df[rsi_over_col] == 1].index:
-            signals.append({"type": "RSI Signal", "date": date, "weight": -1, "asset": asset_key})
+            if date >= start_date:
+                signals.append({"type": "RSI Signal", "date": date, "weight": -1, "asset": asset_key})
 
     if rsi_under_col in df.columns:
         for date in df[df[rsi_under_col] == 1].index:
-            signals.append({"type": "RSI Signal", "date": date, "weight": +1, "asset": asset_key})
+            if date >= start_date:
+                signals.append({"type": "RSI Signal", "date": date, "weight": +1, "asset": asset_key})
 
-    # OBV Direction
+    # OBV as a daily signal
     obv_col = f'OBV_{prefix}'
     if obv_col in df.columns:
-        for date, value in df[obv_col].diff().items():  # Updated to .items()
-            weight = +1 if value > 0 else -1
-            signals.append({"type": "OBV", "date": date, "weight": weight, "asset": asset_key})
+        for date, value in df[obv_col].diff().items():
+            if date >= start_date:
+                weight = +1 if value > 0 else -1
+                signals.append({"type": "OBV", "date": date, "weight": weight, "asset": asset_key})
 
     return signals
+
 
 # Collect signals for each asset
 all_signals = []
 for asset_key in ["BTC", "SP500", "NASDAQ", "GOLD", "DXY"]:
     asset_df = master_df_dashboard[[col for col in master_df_dashboard.columns if asset_key in col]]
-    asset_signals = extract_signals(asset_df, asset_key)
+    asset_signals = extract_signals(asset_df, asset_key, selected_days)
     all_signals.extend(asset_signals)
 
 # === 3️⃣ Compute Sentiment Scores ===
 
 def calculate_signal_weight(signal_date, signal_type):
     age = (datetime.datetime.now() - signal_date).days
-    if signal_type in decay_params:
-        decay_func = decay_params[signal_type]["decay_func"]
-        half_life = decay_params[signal_type]["half_life"]
-        return decay_func(age, half_life)
-    return 0
+    decay_factor = decay_params[signal_type]["decay_factor"]
+    return max(0, decay_factor ** age)
 
 def compute_sentiment_score(signals):
     score = 0
@@ -650,23 +664,24 @@ def compute_sentiment_score(signals):
         weight = signal["weight"]
         date = signal["date"]
         signal_type = signal["type"]
-        score += weight * calculate_signal_weight(date, signal_type)
+        decay_weight = calculate_signal_weight(date, signal_type)
+        score += weight * decay_weight
     return score
 
 # Calculate Net Sentiment Scores
 btc_signals = [s for s in all_signals if s["asset"] == "BTC"]
 market_signals = all_signals  # No filtering; we want all assets
 
-# Compute sentiment scores
+# Calculate sentiment scores
 btc_sentiment = compute_sentiment_score(btc_signals)
 market_sentiment = compute_sentiment_score(market_signals)
-# === 4️⃣ Display Sentiment Boxes ===
 
-st.markdown("### 📢 Bitcoin Sentiment Based on Signals")
+st.markdown(f"### 📢 Bitcoin Sentiment Over {selected_days} Days")
 st.info(f"Bitcoin Bias: {'Bullish' if btc_sentiment > 0 else 'Bearish'} ({btc_sentiment:.2f})")
 
-st.markdown("### 📢 Market Sentiment Based on Signals")
+st.markdown(f"### 📢 Market Sentiment Over {selected_days} Days")
 st.warning(f"Market Bias: {'Bullish' if market_sentiment > 0 else 'Bearish'} ({market_sentiment:.2f})")
+
 
 # === 5️⃣ Technical Signals Summary ===
 st.markdown("### 📊 Technical Signals Summary")
