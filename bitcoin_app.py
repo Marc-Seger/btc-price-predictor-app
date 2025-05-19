@@ -672,14 +672,6 @@ st.markdown(f"### 📢 Bitcoin Multi-Day Sentiment: {btc_multi_day:.2f}")
 st.markdown(f"### 📢 Bitcoin Daily Sentiment: {btc_daily:.2f}")
 st.markdown(f"### 📢 Market Sentiment: {market_sentiment:.2f}")
 
-
-st.markdown(f"### 📢 Bitcoin Sentiment Over {selected_days} Days")
-st.info(f"Bitcoin Bias: {'Bullish' if btc_sentiment > 0 else 'Bearish'} ({btc_sentiment:.2f})")
-
-st.markdown(f"### 📢 Market Sentiment Over {selected_days} Days")
-st.warning(f"Market Bias: {'Bullish' if market_sentiment > 0 else 'Bearish'} ({market_sentiment:.2f})")
-
-
 # === 5️⃣ Technical Signals Summary ===
 st.markdown("### 📊 Technical Signals Summary")
 
