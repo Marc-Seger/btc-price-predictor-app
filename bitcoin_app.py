@@ -297,8 +297,9 @@ fig = make_subplots(rows=rows, shared_xaxes=True, vertical_spacing=0.03,
                     row_heights=[0.5] + [0.12] * (rows - 1))
 
 current_row = 1
+
 # === 5️⃣ Main Price Chart ===
-if chart_type == "Candlestick":
+if asset == "Bitcoin" and chart_type == "Candlestick":
     # Dynamically adjust candle width based on timeframe
     if timeframe == "1H":
         candle_width = 60 * 60 * 1000  # 1 hour in milliseconds
@@ -321,14 +322,17 @@ if chart_type == "Candlestick":
         increasing_line_color='green',
         decreasing_line_color='red'
     ), row=current_row, col=1)
+
 else:
+    # For all other assets or if not Candlestick
     fig.add_trace(go.Scatter(
         x=df_plot.index,
-        y=df_plot[price_cols[3]],
+        y=df_plot[price_cols[3]],  # Close Price for line chart
         mode='lines',
         name='Close Price',
         line=dict(color='white')
     ), row=current_row, col=1)
+
 
 # Adjust x-axis range for candle width effect
 if chart_type == "Candlestick":
