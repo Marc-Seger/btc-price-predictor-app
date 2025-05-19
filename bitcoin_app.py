@@ -837,6 +837,7 @@ def summarize_signals_detailed(signals):
                     rsi_status = status
                     break
 
+
         # Update summary
         summary["Asset"].append(asset)
         summary["Last Cross"].append(last_cross)
