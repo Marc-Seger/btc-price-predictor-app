@@ -339,13 +339,13 @@ for ind in indicators:
                 x=master_df_dashboard.index,
                 y=master_df_dashboard[upper],
                 name='Upper Band',
-                line=dict(dash='dash', color='gray')
+                line=dict(dash='dash', color='blue')
             ), row=current_row, col=1)
             fig.add_trace(go.Scatter(
                 x=master_df_dashboard.index,
                 y=master_df_dashboard[lower],
                 name='Lower Band',
-                line=dict(dash='dash', color='gray')
+                line=dict(dash='dash', color='red')
             ), row=current_row, col=1)
 
     # VWAP
