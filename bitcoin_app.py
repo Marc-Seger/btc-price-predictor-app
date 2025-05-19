@@ -307,8 +307,11 @@ if chart_type == "Candlestick":
         low=df_plot[price_cols[2]],
         close=df_plot[price_cols[3]],
         name="Price",
-        increasing_line_color='green',
-        decreasing_line_color='red'
+        increasing_line_color='limegreen',
+        decreasing_line_color='red',
+        increasing_fillcolor='limegreen',
+        decreasing_fillcolor='red',
+        line_width=1.5  # Adjust thickness
     ), row=current_row, col=1)
 else:
     fig.add_trace(go.Scatter(
@@ -316,7 +319,8 @@ else:
         y=df_plot[price_cols[3]],
         mode='lines',
         name='Close Price',
-        line=dict(color='white', width=2)
+        line=dict(color='cyan', width=2.5, dash='solid'),
+        hoverinfo='x+y'
     ), row=current_row, col=1)
 
 # === 6️⃣ Overlay Indicators (SMA, EMA, Bollinger Bands, VWAP) ===
@@ -329,7 +333,8 @@ for ind in indicators:
                 x=master_df_dashboard.index,
                 y=master_df_dashboard[col_name],
                 name=ind,
-                line=dict(dash='dot', color='lightblue', width=1.5)
+                line=dict(color='orange' if 'SMA' in ind else 'deepskyblue', width=2, dash='dot'),
+                opacity=0.8
             ), row=current_row, col=1)
 
     # Bollinger Bands
@@ -358,7 +363,8 @@ for ind in indicators:
                 x=master_df_dashboard.index,
                 y=master_df_dashboard[vwap_col],
                 name='VWAP',
-                line=dict(color='yellow', width=1.5)
+                line=dict(color='yellow', width=2.5, dash='solid'),
+                opacity=0.9
             ), row=current_row, col=1)
 
 # === 7️⃣ MACD (Daily & Weekly) Subplot ===
@@ -377,7 +383,8 @@ if "MACD_D" in indicators or "MACD_W" in indicators:
                     x=master_df_dashboard.index,
                     y=master_df_dashboard[macd_col],
                     name=f"MACD {macd_type}",
-                    line=dict(color='blue', width=2)
+                    line=dict(color='dodgerblue', width=2.5),
+                    hoverinfo='x+y'
                 ), row=current_row, col=1)
 
                 # Signal Line
@@ -385,20 +392,23 @@ if "MACD_D" in indicators or "MACD_W" in indicators:
                     x=master_df_dashboard.index,
                     y=master_df_dashboard[signal_col],
                     name=f"Signal {macd_type}",
-                    line=dict(color='orange', width=2, dash='dot')
+                    line=dict(color='orange', width=2, dash='dot'),
+                    hoverinfo='x+y'
                 ), row=current_row, col=1)
 
                 # Histogram
-                hist_colors = [
-                    'green' if val >= 0 else 'red' for val in master_df_dashboard[hist_col]
-                ]
+                hist_colors = ['green' if val >= 0 else 'red' for val in master_df_dashboard[hist_col]]
                 fig.add_trace(go.Bar(
                     x=master_df_dashboard.index,
                     y=master_df_dashboard[hist_col],
                     name=f"Histogram {macd_type}",
-                    marker_color=hist_colors,
-                    opacity=0.8
+                    marker=dict(
+                        color=hist_colors,
+                        opacity=0.8
+                    ),
+                    hoverinfo='x+y'
                 ), row=current_row, col=1)
+
 
 # === 8️⃣ RSI Subplot ===
 if "RSI" in indicators:
@@ -448,12 +458,22 @@ if "Stochastic" in indicators:
 # === 1️⃣1️⃣ Layout Settings ===
 fig.update_layout(
     title=f"{asset} Price Chart with Indicators",
-    height=400 + rows * 150,
+    height=500 + rows * 150,
     xaxis_rangeslider_visible=False,
     showlegend=True,
     template="plotly_dark",
-    yaxis=dict(showgrid=True, zeroline=True, gridcolor='gray', gridwidth=0.5),
-    xaxis=dict(showgrid=True, zeroline=True, gridcolor='gray', gridwidth=0.5)
+    yaxis=dict(
+        showgrid=False,
+        zeroline=False,
+        showline=False
+    ),
+    xaxis=dict(
+        showgrid=False,
+        zeroline=False,
+        showline=False
+    ),
+    plot_bgcolor='#121212',  # Dark background
+    paper_bgcolor='#121212',
 )
 
 # === 1️⃣2️⃣ Display Chart ===
