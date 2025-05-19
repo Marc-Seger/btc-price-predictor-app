@@ -693,12 +693,20 @@ def get_bias_text(score):
     else:
         return "Mixed"
 
-btc_multi_day_text = get_bias_text(btc_multi_day)
-btc_daily_text = get_bias_text(btc_daily)
-market_sentiment_text = get_bias_text(market_sentiment)
+def get_color(score):
+    if score > 0.5:
+        return "green"
+    elif score < -0.5:
+        return "red"
+    else:
+        return "orange"
 
-# Display Sentiment Overview in Styled Boxes
-col1, col2 = st.columns(2)
+btc_color = get_color(btc_multi_day)
+market_color = get_color(market_sentiment)
+
+# Determine Bias Text
+btc_multi_day_text = get_bias_text(btc_multi_day)
+market_sentiment_text = get_bias_text(market_sentiment)
 
 # BTC Sentiment Box
 col1.markdown(f"""
@@ -711,7 +719,7 @@ col1.markdown(f"""
         height: 100%;
     '>
         <div style='font-weight:600; font-size:1.3rem;'>BTC Sentiment</div>
-        <div style='font-size:1.8rem; font-weight:700; margin:0.2rem 0; color: {"green" if btc_multi_day > 0 else "red"}'>
+        <div style='font-size:1.8rem; font-weight:700; margin:0.2rem 0; color: {btc_color};'>
             {btc_multi_day_text.upper()}
         </div>
     </div>
@@ -728,7 +736,7 @@ col2.markdown(f"""
         height: 100%;
     '>
         <div style='font-weight:600; font-size:1.3rem;'>Market Sentiment</div>
-        <div style='font-size:1.8rem; font-weight:700; margin:0.2rem 0; color: {"green" if market_sentiment > 0 else "red"}'>
+        <div style='font-size:1.8rem; font-weight:700; margin:0.2rem 0; color: {market_color};'>
             {market_sentiment_text.upper()}
         </div>
     </div>
@@ -800,7 +808,16 @@ def summarize_signals_detailed(signals):
         last_macd = "N/A"
         if macd_signals:
             macd_type = "Bullish" if macd_signals[-1]["weight"] > 0 else "Bearish"
-            last_macd = f"{macd_type} on {macd_signals[-1]['date'].date()}"
+            def get_macd_description(signal):
+                macd_type = "Bullish" if signal["weight"] > 0 else "Bearish"
+                timeframe = "Weekly" if "W" in signal["type"] else "Daily"
+                return f"{macd_type} {timeframe} MACD Crossover on {signal['date'].date()}"
+
+            macd_signals = [s for s in asset_signals if s["type"] in ["Daily MACD", "Weekly MACD"]]
+            last_macd = "N/A"
+            if macd_signals:
+                last_macd = get_macd_description(macd_signals[-1])
+
 
         # RSI Status
         rsi_signals = [s for s in asset_signals if s["type"] == "RSI Signal"]
@@ -808,17 +825,32 @@ def summarize_signals_detailed(signals):
         if rsi_signals:
             rsi_status = "Overbought" if rsi_signals[-1]["weight"] == 1 else "Oversold"
 
+
+        def interpret_obv(obv_mean):
+            if obv_mean > 0.2:
+                return "Strong Accumulation"
+            elif 0.1 < obv_mean <= 0.2:
+                return "Accumulation"
+            elif -0.1 <= obv_mean <= 0.1:
+                return "Neutral"
+            elif -0.2 <= obv_mean < -0.1:
+                return "Distribution"
+            else:
+                return "Strong Distribution"
+
+        obv_interpretation = interpret_obv(obv_mean)
+
         # Append to summary
         summary["Asset"].append(asset)
         summary["Last Cross"].append(last_cross)
-        summary["OBV Mean"].append(obv_mean)
+        summary["OBV Mean"].append(obv_interpretation)
         summary["Last MACD"].append(last_macd)
         summary["RSI Status"].append(rsi_status)
 
     return pd.DataFrame(summary)
 
 detailed_summary_df = summarize_signals_detailed(all_signals)
-st.dataframe(detailed_summary_df)
+st.dataframe(detailed_summary_df.style.hide(axis="index"))
 
 # Asset-Wise Summary
 def asset_wise_summary(signals):
