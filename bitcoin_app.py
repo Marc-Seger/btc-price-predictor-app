@@ -297,7 +297,6 @@ fig = make_subplots(rows=rows, shared_xaxes=True, vertical_spacing=0.03,
                     row_heights=[0.5] + [0.12] * (rows - 1))
 
 current_row = 1
-
 # === 5️⃣ Main Price Chart ===
 if chart_type == "Candlestick":
     # Dynamically adjust candle width based on timeframe
@@ -320,8 +319,7 @@ if chart_type == "Candlestick":
         close=df_plot[price_cols[3]],
         name="Price",
         increasing_line_color='green',
-        decreasing_line_color='red',
-        width=candle_width  # Apply the calculated width
+        decreasing_line_color='red'
     ), row=current_row, col=1)
 else:
     fig.add_trace(go.Scatter(
@@ -331,6 +329,26 @@ else:
         name='Close Price',
         line=dict(color='white')
     ), row=current_row, col=1)
+
+# Adjust x-axis range for candle width effect
+if chart_type == "Candlestick":
+    if timeframe == "1H":
+        time_gap = pd.Timedelta(hours=1)
+    elif timeframe == "4H":
+        time_gap = pd.Timedelta(hours=4)
+    elif timeframe == "Daily":
+        time_gap = pd.Timedelta(days=1)
+    elif timeframe == "Weekly":
+        time_gap = pd.Timedelta(weeks=1)
+    else:
+        time_gap = pd.Timedelta(days=1)  # Default to daily
+
+    # Adjust the range to slightly compress the view for better visual consistency
+    fig.update_xaxes(range=[
+        df_plot.index.min() - time_gap,
+        df_plot.index.max() + time_gap
+    ])
+
 
 # === 6️⃣ Overlay Indicators (SMA, EMA, Bollinger Bands, VWAP) ===
 for ind in indicators:
