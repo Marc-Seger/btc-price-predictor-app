@@ -229,12 +229,9 @@ with col1:
     asset = st.selectbox("Select Asset", list(asset_options.keys()), key="asset_select")
 
 with col2:
-    chart_type = st.selectbox("Chart Type", ["Line Chart", "Candlestick"], index=1, key="chart_type_select")  # Default to Candlestick
-
-with col3:
     timeframe = st.selectbox("Candle Timeframe", ["1H", "4H", "Daily", "Weekly"], key="timeframe_select")
 
-with col4:
+with col3:
     indicators = st.multiselect(
         "Select Indicators",
         [
@@ -269,8 +266,8 @@ if volume_col:
     df_plot['Volume'] = master_df_dashboard[volume_col]
 
 # === 3️⃣ Resample Timeframe Safely ===
-if timeframe in ["Weekly", "Monthly"]:
-    resample_rule = 'W' if timeframe == "Weekly" else 'M'
+if timeframe == "Weekly":
+    resample_rule = 'W'
     agg_dict = {
         price_cols[0]: 'first',
         price_cols[1]: 'max',
@@ -299,19 +296,8 @@ fig = make_subplots(rows=rows, shared_xaxes=True, vertical_spacing=0.03,
 current_row = 1
 
 # === 5️⃣ Main Price Chart ===
-if asset == "Bitcoin" and chart_type == "Candlestick":
-    # Dynamically adjust candle width based on timeframe
-    if timeframe == "1H":
-        candle_width = 60 * 60 * 1000  # 1 hour in milliseconds
-    elif timeframe == "4H":
-        candle_width = 4 * 60 * 60 * 1000  # 4 hours in milliseconds
-    elif timeframe == "Daily":
-        candle_width = 24 * 60 * 60 * 1000  # 1 day in milliseconds
-    elif timeframe == "Weekly":
-        candle_width = 7 * 24 * 60 * 60 * 1000  # 1 week in milliseconds
-    else:
-        candle_width = None  # Default width
-
+if asset == "Bitcoin":
+    # Plot Candlestick for Bitcoin only
     fig.add_trace(go.Candlestick(
         x=df_plot.index,
         open=df_plot[price_cols[0]],
@@ -322,9 +308,8 @@ if asset == "Bitcoin" and chart_type == "Candlestick":
         increasing_line_color='green',
         decreasing_line_color='red'
     ), row=current_row, col=1)
-
 else:
-    # For all other assets or if not Candlestick
+    # Plot Line Chart for all other assets
     fig.add_trace(go.Scatter(
         x=df_plot.index,
         y=df_plot[price_cols[3]],  # Close Price for line chart
@@ -332,26 +317,6 @@ else:
         name='Close Price',
         line=dict(color='white')
     ), row=current_row, col=1)
-
-
-# Adjust x-axis range for candle width effect
-if chart_type == "Candlestick":
-    if timeframe == "1H":
-        time_gap = pd.Timedelta(hours=1)
-    elif timeframe == "4H":
-        time_gap = pd.Timedelta(hours=4)
-    elif timeframe == "Daily":
-        time_gap = pd.Timedelta(days=1)
-    elif timeframe == "Weekly":
-        time_gap = pd.Timedelta(weeks=1)
-    else:
-        time_gap = pd.Timedelta(days=1)  # Default to daily
-
-    # Adjust the range to slightly compress the view for better visual consistency
-    fig.update_xaxes(range=[
-        df_plot.index.min() - time_gap,
-        df_plot.index.max() + time_gap
-    ])
 
 
 # === 6️⃣ Overlay Indicators (SMA, EMA, Bollinger Bands, VWAP) ===
