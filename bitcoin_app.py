@@ -589,24 +589,24 @@ def extract_signals(df, asset_key, selected_days):
     start_date = datetime.datetime.now() - pd.Timedelta(days=selected_days)
 
     # Golden/Death Cross
-    for cross_type in ["Golden_Cross_Event", "Death_Cross_Event"]:
+    for cross_type, weight in [("Golden_Cross_Event", 3), ("Death_Cross_Event", -3)]:
         col_name = f"{cross_type}_{prefix}"
         if col_name in df.columns:
             for date in df[df[col_name] == 1].index:
                 if date >= start_date:
-                    weight = 3 if cross_type == "Golden_Cross_Event" else -3
+                    # Assign a unified signal type for both cross types
                     signals.append({"type": "Golden/Death Cross", "date": date, "weight": weight, "asset": asset_key})
 
     # MACD - Daily and Weekly
-    for macd_type in ["D", "W"]:
+    for macd_type, signal_label in [("D", "Daily MACD"), ("W", "Weekly MACD")]:
         macd_col = f"MACD_{macd_type}_{prefix}"
         if macd_col in df.columns:
             for date, value in df[macd_col].dropna().items():
                 if date >= start_date:
                     weight = 2 if value > 0 else -2
-                    signals.append({"type": f"MACD_{macd_type}", "date": date, "weight": weight, "asset": asset_key})
+                    signals.append({"type": signal_label, "date": date, "weight": weight, "asset": asset_key})
 
-    # RSI - Identify overbought/oversold
+    # RSI - Overbought/Oversold
     rsi_col = f"RSI_Close_{prefix}"
     if rsi_col in df.columns:
         for date, value in df[rsi_col].dropna().items():
