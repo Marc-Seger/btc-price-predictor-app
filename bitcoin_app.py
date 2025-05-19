@@ -803,13 +803,19 @@ def summarize_signals_detailed(signals):
         macd_event_col_w = f"MACD_Event_W_{prefix}"
         last_macd = "N/A"
 
+        # Check both daily and weekly MACD events
         for col, timeframe in [(macd_event_col_d, "Daily"), (macd_event_col_w, "Weekly")]:
             if col in asset_df.columns:
+                # Extract the dates of MACD crossover events
                 event_dates = asset_df[asset_df[col] == 1].index
+                
+                # Ensure there are events before proceeding
                 if not event_dates.empty:
-                    macd_type = "Bullish" if asset_df.loc[event_dates[-1], col] == 1 else "Bearish"
-                    last_macd = f"{macd_type} {timeframe} MACD Crossover on {event_dates[-1].date()}"
-                    break
+                    # Extract the most recent event
+                    last_date = event_dates[-1]
+                    macd_type = "Bullish" if asset_df.loc[last_date, col] == 1 else "Bearish"
+                    last_macd = f"{macd_type} {timeframe} MACD Crossover on {last_date.date()}"
+
 
         # RSI Status
         rsi_event_col = f"RSI_Event_{prefix}"
