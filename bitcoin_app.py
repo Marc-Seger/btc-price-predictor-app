@@ -597,12 +597,12 @@ def extract_signals(df, asset_key):
     macd_w_col = f'MACD_Above_Signal_W_{prefix}'
     
     if macd_d_col in df.columns:
-        for date, value in df[macd_d_col].iteritems():
+        for date, value in df[macd_d_col].items():
             weight = +1 if value == 1 else -1
             signals.append({"type": "Daily MACD", "date": date, "weight": weight, "asset": asset_key})
     
     if macd_w_col in df.columns:
-        for date, value in df[macd_w_col].iteritems():
+        for date, value in df[macd_w_col].items():
             weight = +2 if value == 1 else -2
             signals.append({"type": "Weekly MACD", "date": date, "weight": weight, "asset": asset_key})
 
@@ -621,7 +621,7 @@ def extract_signals(df, asset_key):
     # OBV Direction
     obv_col = f'OBV_{prefix}'
     if obv_col in df.columns:
-        for date, value in df[obv_col].diff().iteritems():
+        for date, value in df[obv_col].diff().items():  # Updated to .items()
             weight = +1 if value > 0 else -1
             signals.append({"type": "OBV", "date": date, "weight": weight, "asset": asset_key})
 
