@@ -697,10 +697,43 @@ btc_multi_day_text = get_bias_text(btc_multi_day)
 btc_daily_text = get_bias_text(btc_daily)
 market_sentiment_text = get_bias_text(market_sentiment)
 
-# Display Sentiment Overview
-st.markdown(f"### 📢 Bitcoin Multi-Day Sentiment: {btc_multi_day_text}")
-st.markdown(f"### 📢 Bitcoin Daily Sentiment: {btc_daily_text}")
-st.markdown(f"### 📢 Market Sentiment: {market_sentiment_text}")
+# Display Sentiment Overview in Styled Boxes
+col1, col2 = st.columns(2)
+
+# BTC Sentiment Box
+col1.markdown(f"""
+    <div style='
+        background-color: #262730;
+        padding: 16px;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        text-align: center;
+        height: 100%;
+    '>
+        <div style='font-weight:600; font-size:1.3rem;'>BTC Sentiment</div>
+        <div style='font-size:1.8rem; font-weight:700; margin:0.2rem 0; color: {"green" if btc_multi_day > 0 else "red"}'>
+            {btc_multi_day_text.upper()}
+        </div>
+    </div>
+""", unsafe_allow_html=True)
+
+# Market Sentiment Box
+col2.markdown(f"""
+    <div style='
+        background-color: #262730;
+        padding: 16px;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        text-align: center;
+        height: 100%;
+    '>
+        <div style='font-weight:600; font-size:1.3rem;'>Market Sentiment</div>
+        <div style='font-size:1.8rem; font-weight:700; margin:0.2rem 0; color: {"green" if market_sentiment > 0 else "red"}'>
+            {market_sentiment_text.upper()}
+        </div>
+    </div>
+""", unsafe_allow_html=True)
+
 
 # === 5️⃣ Technical Signals Summary ===
 # Summary Logic
@@ -732,10 +765,60 @@ def summarize_signals(signals):
 
     return pd.DataFrame(summary)
 
-# Display the updated summary table
+# Technical Signals Summary with Detailed Descriptions
 st.markdown("### 📊 Technical Signals Summary")
-summary_df = summarize_signals(all_signals)
-st.dataframe(summary_df)
+
+def summarize_signals_detailed(signals):
+    summary = {
+        "Asset": [],
+        "Last Cross": [],
+        "OBV Mean": [],
+        "Last MACD": [],
+        "RSI Status": []
+    }
+
+    assets = ["BTC", "SP500", "NASDAQ", "GOLD", "DXY"]
+
+    for asset in assets:
+        asset_signals = [s for s in signals if s["asset"] == asset]
+        if not asset_signals:
+            continue
+
+        # OBV Mean
+        obv_scores = [s["weight"] for s in asset_signals if s["type"] == "OBV"]
+        obv_mean = np.mean(obv_scores) if obv_scores else "N/A"
+
+        # Last Cross (Golden/Death)
+        last_cross = "N/A"
+        cross_signals = [s for s in asset_signals if s["type"] == "Golden/Death Cross"]
+        if cross_signals:
+            last_cross_type = "Golden Cross" if cross_signals[-1]["weight"] == 1 else "Death Cross"
+            last_cross = f"{last_cross_type} on {cross_signals[-1]['date'].date()}"
+
+        # Last MACD
+        macd_signals = [s for s in asset_signals if s["type"] in ["Daily MACD", "Weekly MACD"]]
+        last_macd = "N/A"
+        if macd_signals:
+            macd_type = "Bullish" if macd_signals[-1]["weight"] > 0 else "Bearish"
+            last_macd = f"{macd_type} on {macd_signals[-1]['date'].date()}"
+
+        # RSI Status
+        rsi_signals = [s for s in asset_signals if s["type"] == "RSI Signal"]
+        rsi_status = "N/A"
+        if rsi_signals:
+            rsi_status = "Overbought" if rsi_signals[-1]["weight"] == 1 else "Oversold"
+
+        # Append to summary
+        summary["Asset"].append(asset)
+        summary["Last Cross"].append(last_cross)
+        summary["OBV Mean"].append(obv_mean)
+        summary["Last MACD"].append(last_macd)
+        summary["RSI Status"].append(rsi_status)
+
+    return pd.DataFrame(summary)
+
+detailed_summary_df = summarize_signals_detailed(all_signals)
+st.dataframe(detailed_summary_df)
 
 # Asset-Wise Summary
 def asset_wise_summary(signals):
@@ -766,11 +849,51 @@ def asset_wise_summary(signals):
 
     return pd.DataFrame(asset_summary)
 
-# Display Asset-Wise Summary
+# Asset-Wise Signals Overview with Asset Toggler
 st.markdown("### 📊 Asset-Wise Signals Overview")
-asset_summary_df = asset_wise_summary(all_signals)
-st.dataframe(asset_summary_df)
 
+asset_options = ["BTC", "SP500", "NASDAQ", "GOLD", "DXY"]
+selected_asset = st.selectbox("Select Asset for Detailed View", asset_options)
+
+def asset_detailed_view(signals, asset_key):
+    asset_signals = [s for s in signals if s["asset"] == asset_key]
+    if not asset_signals:
+        return pd.DataFrame()
+
+    detailed_summary = {
+        "Signal Type": [],
+        "Date": [],
+        "Status": []
+    }
+
+    # Last 3 Crosses
+    cross_signals = [s for s in asset_signals if s["type"] == "Golden/Death Cross"][-3:]
+    for s in cross_signals:
+        cross_type = "Golden Cross" if s["weight"] == 1 else "Death Cross"
+        detailed_summary["Signal Type"].append(cross_type)
+        detailed_summary["Date"].append(s["date"].date())
+        detailed_summary["Status"].append("Cross")
+
+    # Last 3 MACD
+    macd_signals = [s for s in asset_signals if s["type"] in ["Daily MACD", "Weekly MACD"]][-3:]
+    for s in macd_signals:
+        macd_type = "Bullish" if s["weight"] > 0 else "Bearish"
+        detailed_summary["Signal Type"].append(f"MACD {macd_type}")
+        detailed_summary["Date"].append(s["date"].date())
+        detailed_summary["Status"].append("MACD")
+
+    # Last 3 RSI
+    rsi_signals = [s for s in asset_signals if s["type"] == "RSI Signal"][-3:]
+    for s in rsi_signals:
+        rsi_type = "Overbought" if s["weight"] == 1 else "Oversold"
+        detailed_summary["Signal Type"].append(f"RSI {rsi_type}")
+        detailed_summary["Date"].append(s["date"].date())
+        detailed_summary["Status"].append("RSI")
+
+    return pd.DataFrame(detailed_summary)
+
+asset_detail_df = asset_detailed_view(all_signals, selected_asset)
+st.dataframe(asset_detail_df)
 
 # === 6️⃣ Signal Legend ===
 st.markdown("### 📚 Signal Legend")
