@@ -300,13 +300,28 @@ current_row = 1
 
 # === 5️⃣ Main Price Chart ===
 if chart_type == "Candlestick":
+    # Dynamically adjust candle width based on timeframe
+    if timeframe == "1H":
+        candle_width = 60 * 60 * 1000  # 1 hour in milliseconds
+    elif timeframe == "4H":
+        candle_width = 4 * 60 * 60 * 1000  # 4 hours in milliseconds
+    elif timeframe == "Daily":
+        candle_width = 24 * 60 * 60 * 1000  # 1 day in milliseconds
+    elif timeframe == "Weekly":
+        candle_width = 7 * 24 * 60 * 60 * 1000  # 1 week in milliseconds
+    else:
+        candle_width = None  # Default width
+
     fig.add_trace(go.Candlestick(
         x=df_plot.index,
         open=df_plot[price_cols[0]],
         high=df_plot[price_cols[1]],
         low=df_plot[price_cols[2]],
         close=df_plot[price_cols[3]],
-        name="Price"
+        name="Price",
+        increasing_line_color='green',
+        decreasing_line_color='red',
+        width=candle_width  # Apply the calculated width
     ), row=current_row, col=1)
 else:
     fig.add_trace(go.Scatter(
