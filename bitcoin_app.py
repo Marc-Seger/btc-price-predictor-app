@@ -588,21 +588,38 @@ def extract_signals(df, asset_key, selected_days):
 
     start_date = datetime.datetime.now() - pd.Timedelta(days=selected_days)
 
-    # Multi-Day Signals
-    multi_day_signals = ["Golden/Death Cross", "Weekly MACD", "Daily MACD", "RSI Signal"]
-    multi_day_weights = {"Golden/Death Cross": 3, "Weekly MACD": 2, "Daily MACD": 1, "RSI Signal": 1}
-
-    for signal_type in multi_day_signals:
-        col_name = f"{signal_type.replace(' ', '_')}_{prefix}"
+    # Golden/Death Cross
+    for cross_type in ["Golden_Cross_Event", "Death_Cross_Event"]:
+        col_name = f"{cross_type}_{prefix}"
         if col_name in df.columns:
             for date in df[df[col_name] == 1].index:
                 if date >= start_date:
-                    signals.append({"type": signal_type, "date": date, "weight": multi_day_weights[signal_type], "asset": asset_key})
+                    weight = 3 if cross_type == "Golden_Cross_Event" else -3
+                    signals.append({"type": "Golden/Death Cross", "date": date, "weight": weight, "asset": asset_key})
 
-    # Daily Signal - OBV
+    # MACD - Daily and Weekly
+    for macd_type in ["D", "W"]:
+        macd_col = f"MACD_{macd_type}_{prefix}"
+        if macd_col in df.columns:
+            for date, value in df[macd_col].dropna().items():
+                if date >= start_date:
+                    weight = 2 if value > 0 else -2
+                    signals.append({"type": f"MACD_{macd_type}", "date": date, "weight": weight, "asset": asset_key})
+
+    # RSI - Identify overbought/oversold
+    rsi_col = f"RSI_Close_{prefix}"
+    if rsi_col in df.columns:
+        for date, value in df[rsi_col].dropna().items():
+            if date >= start_date:
+                if value >= 70:
+                    signals.append({"type": "RSI Signal", "date": date, "weight": -1, "asset": asset_key})
+                elif value <= 30:
+                    signals.append({"type": "RSI Signal", "date": date, "weight": 1, "asset": asset_key})
+
+    # OBV - Daily Signal
     obv_col = f'OBV_{prefix}'
     if obv_col in df.columns:
-        for date, value in df[obv_col].diff().items():
+        for date, value in df[obv_col].diff().dropna().items():
             if date >= start_date:
                 weight = 1 if value > 0 else -1
                 signals.append({"type": "OBV", "date": date, "weight": weight, "asset": asset_key})
