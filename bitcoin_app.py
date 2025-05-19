@@ -783,68 +783,100 @@ def summarize_signals_detailed(signals):
 
         # OBV Mean Interpretation
         obv_col = f"OBV_{prefix}"
-        obv_mean = asset_df[obv_col].mean() if obv_col in asset_df.columns else 0
-        obv_interpretation = interpret_obv(obv_mean)
+        obv_interpretation = "N/A"
+        if obv_col in asset_df.columns:
+            obv_diff = asset_df[obv_col].diff()
+            # Calculate 7-day rolling sum to avoid excessive sensitivity
+            obv_rolling = obv_diff.rolling(window=7).sum().dropna()
+            last_obv_signal = obv_rolling.iloc[-1]
+
+            if last_obv_signal > 0:
+                obv_interpretation = "Accumulation"
+            elif last_obv_signal < 0:
+                obv_interpretation = "Distribution"
 
         # Last Cross (Golden/Death) - Track the latest event, regardless of type
         last_cross = "N/A"
-        cross_dates = []
+        cross_events = []
 
         for cross_type, col in [("Golden Cross", f"Golden_Cross_Event_{prefix}"), 
                                 ("Death Cross", f"Death_Cross_Event_{prefix}")]:
             if col in asset_df.columns:
                 event_dates = asset_df[asset_df[col] == 1].index
                 if not event_dates.empty:
-                    cross_dates.append((cross_type, event_dates[-1]))
+                    cross_events.append((cross_type, event_dates[-1]))
 
-        if cross_dates:
+        if cross_events:
             # Sort by date to get the latest event
-            cross_dates.sort(key=lambda x: x[1], reverse=True)
-            last_cross = f"{cross_dates[0][0]} on {cross_dates[0][1].date()}"
+            cross_events.sort(key=lambda x: x[1], reverse=True)
+            last_cross = f"{cross_events[0][0]} on {cross_events[0][1].date()}"
 
         # Last MACD Daily & Weekly
         last_macd_daily = "N/A"
         last_macd_weekly = "N/A"
 
         # Daily MACD
-        macd_col_d = f"MACD_Histogram_D_{prefix}"
-        if macd_col_d in asset_df.columns:
-            macd_series = asset_df[macd_col_d]
-            # Detect crossover (from below 0 to above 0 or vice versa)
-            cross_dates_d = macd_series[(macd_series.shift(1) < 0) & (macd_series > 0)].index.tolist() + \
-                            macd_series[(macd_series.shift(1) > 0) & (macd_series < 0)].index.tolist()
+        macd_col_d = f"MACD_D_{prefix}"
+        signal_col_d = f"Signal_Line_D_{prefix}"
+        if macd_col_d in asset_df.columns and signal_col_d in asset_df.columns:
+            macd_series_d = asset_df[macd_col_d]
+            signal_series_d = asset_df[signal_col_d]
             
+            # Detect crossover events
+            bullish_cross_d = (macd_series_d.shift(1) < signal_series_d.shift(1)) & (macd_series_d > signal_series_d)
+            bearish_cross_d = (macd_series_d.shift(1) > signal_series_d.shift(1)) & (macd_series_d < signal_series_d)
+            
+            cross_dates_d = macd_series_d[bullish_cross_d | bearish_cross_d].index.tolist()
+
             if cross_dates_d:
                 last_date_d = cross_dates_d[-1]
-                macd_type_d = "Bullish" if macd_series[last_date_d] > 0 else "Bearish"
+                last_macd_value = macd_series_d.loc[last_date_d]
+                last_signal_value = signal_series_d.loc[last_date_d]
+                macd_type_d = "Bullish" if last_macd_value > last_signal_value else "Bearish"
                 last_macd_daily = f"{macd_type_d} Daily MACD Crossover on {last_date_d.date()}"
 
         # Weekly MACD
-        macd_col_w = f"MACD_Histogram_W_{prefix}"
-        if macd_col_w in asset_df.columns:
+        macd_col_w = f"MACD_W_{prefix}"
+        signal_col_w = f"Signal_Line_W_{prefix}"
+        if macd_col_w in asset_df.columns and signal_col_w in asset_df.columns:
             macd_series_w = asset_df[macd_col_w]
-            cross_dates_w = macd_series_w[(macd_series_w.shift(1) < 0) & (macd_series_w > 0)].index.tolist() + \
-                            macd_series_w[(macd_series_w.shift(1) > 0) & (macd_series_w < 0)].index.tolist()
+            signal_series_w = asset_df[signal_col_w]
+
+            # Detect crossover events
+            bullish_cross_w = (macd_series_w.shift(1) < signal_series_w.shift(1)) & (macd_series_w > signal_series_w)
+            bearish_cross_w = (macd_series_w.shift(1) > signal_series_w.shift(1)) & (macd_series_w < signal_series_w)
+
+            cross_dates_w = macd_series_w[bullish_cross_w | bearish_cross_w].index.tolist()
 
             if cross_dates_w:
                 last_date_w = cross_dates_w[-1]
-                macd_type_w = "Bullish" if macd_series_w[last_date_w] > 0 else "Bearish"
+                last_macd_value_w = macd_series_w.loc[last_date_w]
+                last_signal_value_w = signal_series_w.loc[last_date_w]
+                macd_type_w = "Bullish" if last_macd_value_w > last_signal_value_w else "Bearish"
                 last_macd_weekly = f"{macd_type_w} Weekly MACD Crossover on {last_date_w.date()}"
 
         # RSI Status
         rsi_status = "N/A"
-        rsi_cols = [
-            (f"RSI_Overbought_{prefix}", "Overbought"),
-            (f"RSI_Oversold_{prefix}", "Oversold")
-        ]
+        rsi_overbought_col = f"RSI_Overbought_{prefix}"
+        rsi_oversold_col = f"RSI_Oversold_{prefix}"
 
-        for col, status in rsi_cols:
-            if col in asset_df.columns:
-                event_dates = asset_df[asset_df[col] == 1].index
-                if not event_dates.empty:
-                    last_date = event_dates[-1]
-                    rsi_status = status
-                    break
+        if rsi_overbought_col in asset_df.columns and asset_df[rsi_overbought_col].any():
+            last_overbought_date = asset_df[asset_df[rsi_overbought_col] == 1].index[-1]
+        else:
+            last_overbought_date = None
+
+        if rsi_oversold_col in asset_df.columns and asset_df[rsi_oversold_col].any():
+            last_oversold_date = asset_df[asset_df[rsi_oversold_col] == 1].index[-1]
+        else:
+            last_oversold_date = None
+
+        # Determine the most recent RSI event
+        if last_overbought_date and last_oversold_date:
+            rsi_status = "Overbought" if last_overbought_date > last_oversold_date else "Oversold"
+        elif last_overbought_date:
+            rsi_status = "Overbought"
+        elif last_oversold_date:
+            rsi_status = "Oversold"
 
         # Update summary
         summary["Asset"].append(asset)
