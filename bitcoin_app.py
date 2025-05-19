@@ -799,33 +799,43 @@ def summarize_signals_detailed(signals):
                     break
 
         # Last MACD
-        macd_event_col_d = f"MACD_Event_D_{prefix}"
-        macd_event_col_w = f"MACD_Event_W_{prefix}"
         last_macd = "N/A"
+        macd_cols = [
+            (f"MACD_Histogram_D_{prefix}", "Daily"),
+            (f"MACD_Histogram_W_{prefix}", "Weekly")
+        ]
 
-        # Check both daily and weekly MACD events
-        for col, timeframe in [(macd_event_col_d, "Daily"), (macd_event_col_w, "Weekly")]:
+        for col, timeframe in macd_cols:
             if col in asset_df.columns:
-                # Extract the dates of MACD crossover events
-                event_dates = asset_df[asset_df[col] == 1].index
-                
-                # Ensure there are events before proceeding
-                if not event_dates.empty:
-                    # Extract the most recent event
-                    last_date = event_dates[-1]
-                    macd_type = "Bullish" if asset_df.loc[last_date, col] == 1 else "Bearish"
-                    last_macd = f"{macd_type} {timeframe} MACD Crossover on {last_date.date()}"
+                # Extract crossover events
+                histogram = asset_df[col]
+                # Check for crossovers by looking at changes in sign
+                cross_dates = histogram[(histogram.shift(1) < 0) & (histogram > 0)].index
 
+                if not cross_dates.empty:
+                    # Get the most recent crossover event
+                    last_date = cross_dates[-1]
+                    # Determine the crossover type based on the current value
+                    macd_type = "Bullish" if histogram.loc[last_date] > 0 else "Bearish"
+                    last_macd = f"{macd_type} {timeframe} MACD Crossover on {last_date.date()}"
+                    break
 
         # RSI Status
-        rsi_event_col = f"RSI_Event_{prefix}"
         rsi_status = "N/A"
+        rsi_cols = [
+            (f"RSI_Overbought_{prefix}", "Overbought"),
+            (f"RSI_Oversold_{prefix}", "Oversold")
+        ]
 
-        if rsi_event_col in asset_df.columns:
-            event_dates = asset_df[asset_df[rsi_event_col] != 0].index
-            if not event_dates.empty:
-                latest_rsi = asset_df.loc[event_dates[-1], rsi_event_col]
-                rsi_status = "Overbought" if latest_rsi == 1 else "Oversold"
+        for col, status in rsi_cols:
+            if col in asset_df.columns:
+                event_dates = asset_df[asset_df[col] == 1].index
+
+                if not event_dates.empty:
+                    # Get the most recent RSI signal
+                    last_date = event_dates[-1]
+                    rsi_status = status
+                    break
 
         # Update summary
         summary["Asset"].append(asset)
