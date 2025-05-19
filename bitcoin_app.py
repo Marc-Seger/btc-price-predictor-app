@@ -768,7 +768,8 @@ def summarize_signals_detailed(signals):
         "Asset": [],
         "Last Cross": [],
         "OBV Mean": [],
-        "Last MACD": [],
+        "Last MACD Daily": [],
+        "Last MACD Weekly": [],
         "RSI Status": []
     }
 
@@ -785,40 +786,50 @@ def summarize_signals_detailed(signals):
         obv_mean = asset_df[obv_col].mean() if obv_col in asset_df.columns else 0
         obv_interpretation = interpret_obv(obv_mean)
 
-        # Last Cross (Golden/Death)
+        # Last Cross (Golden/Death) - Track the latest event, regardless of type
         last_cross = "N/A"
-        cross_cols = [f"Golden_Cross_Event_{prefix}", f"Death_Cross_Event_{prefix}"]
+        cross_dates = []
 
-        for col in cross_cols:
+        for cross_type, col in [("Golden Cross", f"Golden_Cross_Event_{prefix}"), 
+                                ("Death Cross", f"Death_Cross_Event_{prefix}")]:
             if col in asset_df.columns:
-                # Extract the dates of crossover events
                 event_dates = asset_df[asset_df[col] == 1].index
                 if not event_dates.empty:
-                    cross_type = "Golden Cross" if "Golden" in col else "Death Cross"
-                    last_cross = f"{cross_type} on {event_dates[-1].date()}"
-                    break
+                    cross_dates.append((cross_type, event_dates[-1]))
 
-        # Last MACD
-        last_macd = "N/A"
-        macd_cols = [
-            (f"MACD_Histogram_D_{prefix}", "Daily"),
-            (f"MACD_Histogram_W_{prefix}", "Weekly")
-        ]
+        if cross_dates:
+            # Sort by date to get the latest event
+            cross_dates.sort(key=lambda x: x[1], reverse=True)
+            last_cross = f"{cross_dates[0][0]} on {cross_dates[0][1].date()}"
 
-        for col, timeframe in macd_cols:
-            if col in asset_df.columns:
-                # Extract crossover events
-                histogram = asset_df[col]
-                # Check for crossovers by looking at changes in sign
-                cross_dates = histogram[(histogram.shift(1) < 0) & (histogram > 0)].index
+        # Last MACD Daily & Weekly
+        last_macd_daily = "N/A"
+        last_macd_weekly = "N/A"
 
-                if not cross_dates.empty:
-                    # Get the most recent crossover event
-                    last_date = cross_dates[-1]
-                    # Determine the crossover type based on the current value
-                    macd_type = "Bullish" if histogram.loc[last_date] > 0 else "Bearish"
-                    last_macd = f"{macd_type} {timeframe} MACD Crossover on {last_date.date()}"
-                    break
+        # Daily MACD
+        macd_col_d = f"MACD_Histogram_D_{prefix}"
+        if macd_col_d in asset_df.columns:
+            macd_series = asset_df[macd_col_d]
+            # Detect crossover (from below 0 to above 0 or vice versa)
+            cross_dates_d = macd_series[(macd_series.shift(1) < 0) & (macd_series > 0)].index.tolist() + \
+                            macd_series[(macd_series.shift(1) > 0) & (macd_series < 0)].index.tolist()
+            
+            if cross_dates_d:
+                last_date_d = cross_dates_d[-1]
+                macd_type_d = "Bullish" if macd_series[last_date_d] > 0 else "Bearish"
+                last_macd_daily = f"{macd_type_d} Daily MACD Crossover on {last_date_d.date()}"
+
+        # Weekly MACD
+        macd_col_w = f"MACD_Histogram_W_{prefix}"
+        if macd_col_w in asset_df.columns:
+            macd_series_w = asset_df[macd_col_w]
+            cross_dates_w = macd_series_w[(macd_series_w.shift(1) < 0) & (macd_series_w > 0)].index.tolist() + \
+                            macd_series_w[(macd_series_w.shift(1) > 0) & (macd_series_w < 0)].index.tolist()
+
+            if cross_dates_w:
+                last_date_w = cross_dates_w[-1]
+                macd_type_w = "Bullish" if macd_series_w[last_date_w] > 0 else "Bearish"
+                last_macd_weekly = f"{macd_type_w} Weekly MACD Crossover on {last_date_w.date()}"
 
         # RSI Status
         rsi_status = "N/A"
@@ -830,19 +841,17 @@ def summarize_signals_detailed(signals):
         for col, status in rsi_cols:
             if col in asset_df.columns:
                 event_dates = asset_df[asset_df[col] == 1].index
-
                 if not event_dates.empty:
-                    # Get the most recent RSI signal
                     last_date = event_dates[-1]
                     rsi_status = status
                     break
-
 
         # Update summary
         summary["Asset"].append(asset)
         summary["Last Cross"].append(last_cross)
         summary["OBV Mean"].append(obv_interpretation)
-        summary["Last MACD"].append(last_macd)
+        summary["Last MACD Daily"].append(last_macd_daily)
+        summary["Last MACD Weekly"].append(last_macd_weekly)
         summary["RSI Status"].append(rsi_status)
 
     return pd.DataFrame(summary)
