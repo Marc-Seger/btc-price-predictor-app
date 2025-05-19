@@ -775,37 +775,53 @@ def summarize_signals_detailed(signals):
     assets = ["BTC", "SP500", "NASDAQ", "GOLD", "DXY"]
 
     for asset in assets:
-        asset_signals = [s for s in signals if s["asset"] == asset]
-        if not asset_signals:
+        prefix = asset
+        asset_df = master_df_dashboard[[col for col in master_df_dashboard.columns if prefix in col]]
+        if asset_df.empty:
             continue
 
         # OBV Mean Interpretation
-        obv_scores = [s["weight"] for s in asset_signals if s["type"] == "OBV"]
-        obv_mean = np.mean(obv_scores) if obv_scores else 0
+        obv_col = f"OBV_{prefix}"
+        obv_mean = asset_df[obv_col].mean() if obv_col in asset_df.columns else 0
         obv_interpretation = interpret_obv(obv_mean)
 
         # Last Cross (Golden/Death)
-        cross_signals = [s for s in asset_signals if s["type"] == "Golden/Death Cross"]
         last_cross = "N/A"
-        if cross_signals:
-            last_cross_type = "Golden" if cross_signals[-1]["weight"] > 0 else "Death"
-            last_cross = f"{last_cross_type} Cross on {cross_signals[-1]['date'].date()}"
+        cross_cols = [f"Golden_Cross_Event_{prefix}", f"Death_Cross_Event_{prefix}"]
+
+        for col in cross_cols:
+            if col in asset_df.columns:
+                # Extract the dates of crossover events
+                event_dates = asset_df[asset_df[col] == 1].index
+                if not event_dates.empty:
+                    cross_type = "Golden Cross" if "Golden" in col else "Death Cross"
+                    last_cross = f"{cross_type} on {event_dates[-1].date()}"
+                    break
 
         # Last MACD
-        macd_signals = [s for s in asset_signals if s["type"] in ["Daily MACD", "Weekly MACD"]]
+        macd_event_col_d = f"MACD_Event_D_{prefix}"
+        macd_event_col_w = f"MACD_Event_W_{prefix}"
         last_macd = "N/A"
-        if macd_signals:
-            macd_signal = macd_signals[-1]
-            macd_type = "Bullish" if macd_signal["weight"] > 0 else "Bearish"
-            timeframe = "Weekly" if "W" in macd_signal["type"] else "Daily"
-            last_macd = f"{macd_type} {timeframe} MACD Crossover on {macd_signal['date'].date()}"
+
+        for col, timeframe in [(macd_event_col_d, "Daily"), (macd_event_col_w, "Weekly")]:
+            if col in asset_df.columns:
+                event_dates = asset_df[asset_df[col] == 1].index
+                if not event_dates.empty:
+                    macd_type = "Bullish" if asset_df.loc[event_dates[-1], col] == 1 else "Bearish"
+                    last_macd = f"{macd_type} {timeframe} MACD Crossover on {event_dates[-1].date()}"
+                    break
 
         # RSI Status
-        rsi_signals = [s for s in asset_signals if s["type"] == "RSI Signal"]
+        rsi_event_col = f"RSI_Event_{prefix}"
         rsi_status = "N/A"
-        if rsi_signals:
-            rsi_status = "Overbought" if rsi_signals[-1]["weight"] == 1 else "Oversold"
 
+        if rsi_event_col in asset_df.columns:
+            event_dates = asset_df[asset_df[rsi_event_col] != 0].index
+            if not event_dates.empty:
+                latest_rsi = asset_df.loc[event_dates[-1], rsi_event_col]
+                rsi_status = "Overbought" if latest_rsi == 1 else "Oversold"
+
+        # Update summary
         summary["Asset"].append(asset)
         summary["Last Cross"].append(last_cross)
         summary["OBV Mean"].append(obv_interpretation)
@@ -814,6 +830,7 @@ def summarize_signals_detailed(signals):
 
     return pd.DataFrame(summary)
 
+# Generate the DataFrame
 detailed_summary_df = summarize_signals_detailed(all_signals)
 st.dataframe(detailed_summary_df.style.hide(axis="index"))
 
