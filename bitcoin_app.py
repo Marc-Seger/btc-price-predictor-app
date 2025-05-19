@@ -586,11 +586,11 @@ def extract_signals(df, asset_key):
     
     if golden_col in df.columns:
         for date in df[df[golden_col] == 1].index:
-            signals.append({"type": "Golden/Death Cross", "date": date, "weight": +3})
+            signals.append({"type": "Golden/Death Cross", "date": date, "weight": +3, "asset": asset_key})
 
     if death_col in df.columns:
         for date in df[df[death_col] == 1].index:
-            signals.append({"type": "Golden/Death Cross", "date": date, "weight": -3})
+            signals.append({"type": "Golden/Death Cross", "date": date, "weight": -3, "asset": asset_key})
 
     # MACD Signals
     macd_d_col = f'MACD_Above_Signal_D_{prefix}'
@@ -599,12 +599,12 @@ def extract_signals(df, asset_key):
     if macd_d_col in df.columns:
         for date, value in df[macd_d_col].iteritems():
             weight = +1 if value == 1 else -1
-            signals.append({"type": "Daily MACD", "date": date, "weight": weight})
+            signals.append({"type": "Daily MACD", "date": date, "weight": weight, "asset": asset_key})
     
     if macd_w_col in df.columns:
         for date, value in df[macd_w_col].iteritems():
             weight = +2 if value == 1 else -2
-            signals.append({"type": "Weekly MACD", "date": date, "weight": weight})
+            signals.append({"type": "Weekly MACD", "date": date, "weight": weight, "asset": asset_key})
 
     # RSI Signals
     rsi_over_col = f'RSI_Overbought_{prefix}'
@@ -612,18 +612,18 @@ def extract_signals(df, asset_key):
     
     if rsi_over_col in df.columns:
         for date in df[df[rsi_over_col] == 1].index:
-            signals.append({"type": "RSI Signal", "date": date, "weight": -1})
+            signals.append({"type": "RSI Signal", "date": date, "weight": -1, "asset": asset_key})
 
     if rsi_under_col in df.columns:
         for date in df[df[rsi_under_col] == 1].index:
-            signals.append({"type": "RSI Signal", "date": date, "weight": +1})
+            signals.append({"type": "RSI Signal", "date": date, "weight": +1, "asset": asset_key})
 
     # OBV Direction
     obv_col = f'OBV_{prefix}'
     if obv_col in df.columns:
         for date, value in df[obv_col].diff().iteritems():
             weight = +1 if value > 0 else -1
-            signals.append({"type": "OBV", "date": date, "weight": weight})
+            signals.append({"type": "OBV", "date": date, "weight": weight, "asset": asset_key})
 
     return signals
 
@@ -654,12 +654,12 @@ def compute_sentiment_score(signals):
     return score
 
 # Calculate Net Sentiment Scores
-btc_signals = [s for s in all_signals if "BTC" in s["type"]]
+btc_signals = [s for s in all_signals if s["asset"] == "BTC"]
+market_signals = all_signals  # No filtering; we want all assets
+
+# Compute sentiment scores
 btc_sentiment = compute_sentiment_score(btc_signals)
-
-market_signals = [s for s in all_signals]
 market_sentiment = compute_sentiment_score(market_signals)
-
 # === 4️⃣ Display Sentiment Boxes ===
 
 st.markdown("### 📢 Bitcoin Sentiment Based on Signals")
