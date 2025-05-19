@@ -306,7 +306,9 @@ if chart_type == "Candlestick":
         high=df_plot[price_cols[1]],
         low=df_plot[price_cols[2]],
         close=df_plot[price_cols[3]],
-        name="Price"
+        name="Price",
+        increasing_line_color='green',
+        decreasing_line_color='red'
     ), row=current_row, col=1)
 else:
     fig.add_trace(go.Scatter(
@@ -314,7 +316,7 @@ else:
         y=df_plot[price_cols[3]],
         mode='lines',
         name='Close Price',
-        line=dict(color='white')
+        line=dict(color='white', width=2)
     ), row=current_row, col=1)
 
 # === 6️⃣ Overlay Indicators (SMA, EMA, Bollinger Bands, VWAP) ===
@@ -327,7 +329,7 @@ for ind in indicators:
                 x=master_df_dashboard.index,
                 y=master_df_dashboard[col_name],
                 name=ind,
-                line=dict(dash='dot')
+                line=dict(dash='dot', color='lightblue', width=1.5)
             ), row=current_row, col=1)
 
     # Bollinger Bands
@@ -339,13 +341,13 @@ for ind in indicators:
                 x=master_df_dashboard.index,
                 y=master_df_dashboard[upper],
                 name='Upper Band',
-                line=dict(dash='dash', color='gray')
+                line=dict(dash='dot', color='gray', width=1)
             ), row=current_row, col=1)
             fig.add_trace(go.Scatter(
                 x=master_df_dashboard.index,
                 y=master_df_dashboard[lower],
                 name='Lower Band',
-                line=dict(dash='dash', color='gray')
+                line=dict(dash='dot', color='gray', width=1)
             ), row=current_row, col=1)
 
     # VWAP
@@ -356,7 +358,7 @@ for ind in indicators:
                 x=master_df_dashboard.index,
                 y=master_df_dashboard[vwap_col],
                 name='VWAP',
-                line=dict(color='blue')
+                line=dict(color='yellow', width=1.5)
             ), row=current_row, col=1)
 
 # === 7️⃣ MACD (Daily & Weekly) Subplot ===
@@ -369,12 +371,13 @@ if "MACD_D" in indicators or "MACD_W" in indicators:
             hist_col = f'MACD_Histogram_{macd_type}_{prefix}'
 
             if macd_col in master_df_dashboard.columns and signal_col in master_df_dashboard.columns:
+
                 # MACD Line
                 fig.add_trace(go.Scatter(
                     x=master_df_dashboard.index,
                     y=master_df_dashboard[macd_col],
                     name=f"MACD {macd_type}",
-                    line=dict(color='purple')
+                    line=dict(color='blue', width=2)
                 ), row=current_row, col=1)
 
                 # Signal Line
@@ -382,16 +385,19 @@ if "MACD_D" in indicators or "MACD_W" in indicators:
                     x=master_df_dashboard.index,
                     y=master_df_dashboard[signal_col],
                     name=f"Signal {macd_type}",
-                    line=dict(color='gray', dash='dot')
+                    line=dict(color='orange', width=2, dash='dot')
                 ), row=current_row, col=1)
 
                 # Histogram
+                hist_colors = [
+                    'green' if val >= 0 else 'red' for val in master_df_dashboard[hist_col]
+                ]
                 fig.add_trace(go.Bar(
                     x=master_df_dashboard.index,
                     y=master_df_dashboard[hist_col],
                     name=f"Histogram {macd_type}",
-                    marker_color='purple',
-                    opacity=0.5
+                    marker_color=hist_colors,
+                    opacity=0.8
                 ), row=current_row, col=1)
 
 # === 8️⃣ RSI Subplot ===
@@ -403,7 +409,7 @@ if "RSI" in indicators:
             x=master_df_dashboard.index,
             y=master_df_dashboard[rsi_col],
             name="RSI",
-            line=dict(color='orange')
+            line=dict(color='orange', width=2)
         ), row=current_row, col=1)
         fig.update_yaxes(title_text="RSI", row=current_row, col=1, range=[0, 100])
 
@@ -416,7 +422,7 @@ if "OBV" in indicators:
             x=master_df_dashboard.index,
             y=master_df_dashboard[obv_col],
             name="OBV",
-            line=dict(color='green')
+            line=dict(color='green', width=2)
         ), row=current_row, col=1)
 
 # === 🔟 Stochastic Subplot ===
@@ -429,13 +435,13 @@ if "Stochastic" in indicators:
             x=master_df_dashboard.index,
             y=master_df_dashboard[k_col],
             name="%K",
-            line=dict(color='blue')
+            line=dict(color='blue', width=1.5)
         ), row=current_row, col=1)
         fig.add_trace(go.Scatter(
             x=master_df_dashboard.index,
             y=master_df_dashboard[d_col],
             name="%D",
-            line=dict(color='red')
+            line=dict(color='red', width=1.5)
         ), row=current_row, col=1)
         fig.update_yaxes(title_text="Stochastic", row=current_row, col=1, range=[0, 100])
 
@@ -445,7 +451,9 @@ fig.update_layout(
     height=400 + rows * 150,
     xaxis_rangeslider_visible=False,
     showlegend=True,
-    template="plotly_dark"
+    template="plotly_dark",
+    yaxis=dict(showgrid=True, zeroline=True, gridcolor='gray', gridwidth=0.5),
+    xaxis=dict(showgrid=True, zeroline=True, gridcolor='gray', gridwidth=0.5)
 )
 
 # === 1️⃣2️⃣ Display Chart ===
