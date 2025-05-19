@@ -646,7 +646,6 @@ def calculate_signal_weight(signal_date, signal_type, decay_type="multi_day"):
         return 1  # Daily signals have a constant weight (OBV)
     return 0
 
-
 def compute_mean_score(signals, decay_type):
     if not signals:
         return 0
@@ -708,6 +707,11 @@ market_color = get_color(market_sentiment)
 btc_multi_day_text = get_bias_text(btc_multi_day)
 market_sentiment_text = get_bias_text(market_sentiment)
 
+# === 🧠 Sentiment Overview - Positioned Above Technical Signals Summary ===
+st.markdown("### 🧠 Sentiment Overview")
+
+col1, col2 = st.columns(2)
+
 # BTC Sentiment Box
 col1.markdown(f"""
     <div style='
@@ -742,39 +746,22 @@ col2.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
+st.markdown("---")
 
 # === 5️⃣ Technical Signals Summary ===
-# Summary Logic
-def summarize_signals(signals):
-    summary = {
-        "Golden/Death Cross": [],
-        "Weekly MACD": [],
-        "Daily MACD": [],
-        "RSI": [],
-        "OBV Mean": []
-    }
 
-    # Filter signals by type
-    for signal in signals:
-        signal_type = signal["type"]
-        if signal_type in summary:
-            summary[signal_type].append(signal["weight"])
-
-    # Calculate mean OBV
-    obv_scores = [s["weight"] for s in signals if s["type"] == "OBV"]
-    summary["OBV Mean"] = [np.mean(obv_scores)] if obv_scores else ["N/A"]
-
-    # Keep latest occurrences for other signals
-    for key in ["Golden/Death Cross", "Weekly MACD", "Daily MACD", "RSI"]:
-        if summary[key]:
-            summary[key] = [summary[key][-1]]
-        else:
-            summary[key] = ["N/A"]
-
-    return pd.DataFrame(summary)
-
-# Technical Signals Summary with Detailed Descriptions
-st.markdown("### 📊 Technical Signals Summary")
+def interpret_obv(obv_mean):
+    """Translate OBV mean to descriptive text."""
+    if obv_mean > 0.2:
+        return "Strong Accumulation"
+    elif 0.1 < obv_mean <= 0.2:
+        return "Accumulation"
+    elif -0.1 <= obv_mean <= 0.1:
+        return "Neutral"
+    elif -0.2 <= obv_mean < -0.1:
+        return "Distribution"
+    else:
+        return "Strong Distribution"
 
 def summarize_signals_detailed(signals):
     summary = {
@@ -792,32 +779,26 @@ def summarize_signals_detailed(signals):
         if not asset_signals:
             continue
 
-        # OBV Mean
+        # OBV Mean Interpretation
         obv_scores = [s["weight"] for s in asset_signals if s["type"] == "OBV"]
-        obv_mean = np.mean(obv_scores) if obv_scores else "N/A"
+        obv_mean = np.mean(obv_scores) if obv_scores else 0
+        obv_interpretation = interpret_obv(obv_mean)
 
         # Last Cross (Golden/Death)
-        last_cross = "N/A"
         cross_signals = [s for s in asset_signals if s["type"] == "Golden/Death Cross"]
+        last_cross = "N/A"
         if cross_signals:
-            last_cross_type = "Golden Cross" if cross_signals[-1]["weight"] == 1 else "Death Cross"
-            last_cross = f"{last_cross_type} on {cross_signals[-1]['date'].date()}"
+            last_cross_type = "Golden" if cross_signals[-1]["weight"] > 0 else "Death"
+            last_cross = f"{last_cross_type} Cross on {cross_signals[-1]['date'].date()}"
 
         # Last MACD
         macd_signals = [s for s in asset_signals if s["type"] in ["Daily MACD", "Weekly MACD"]]
         last_macd = "N/A"
         if macd_signals:
-            macd_type = "Bullish" if macd_signals[-1]["weight"] > 0 else "Bearish"
-            def get_macd_description(signal):
-                macd_type = "Bullish" if signal["weight"] > 0 else "Bearish"
-                timeframe = "Weekly" if "W" in signal["type"] else "Daily"
-                return f"{macd_type} {timeframe} MACD Crossover on {signal['date'].date()}"
-
-            macd_signals = [s for s in asset_signals if s["type"] in ["Daily MACD", "Weekly MACD"]]
-            last_macd = "N/A"
-            if macd_signals:
-                last_macd = get_macd_description(macd_signals[-1])
-
+            macd_signal = macd_signals[-1]
+            macd_type = "Bullish" if macd_signal["weight"] > 0 else "Bearish"
+            timeframe = "Weekly" if "W" in macd_signal["type"] else "Daily"
+            last_macd = f"{macd_type} {timeframe} MACD Crossover on {macd_signal['date'].date()}"
 
         # RSI Status
         rsi_signals = [s for s in asset_signals if s["type"] == "RSI Signal"]
@@ -825,22 +806,6 @@ def summarize_signals_detailed(signals):
         if rsi_signals:
             rsi_status = "Overbought" if rsi_signals[-1]["weight"] == 1 else "Oversold"
 
-
-        def interpret_obv(obv_mean):
-            if obv_mean > 0.2:
-                return "Strong Accumulation"
-            elif 0.1 < obv_mean <= 0.2:
-                return "Accumulation"
-            elif -0.1 <= obv_mean <= 0.1:
-                return "Neutral"
-            elif -0.2 <= obv_mean < -0.1:
-                return "Distribution"
-            else:
-                return "Strong Distribution"
-
-        obv_interpretation = interpret_obv(obv_mean)
-
-        # Append to summary
         summary["Asset"].append(asset)
         summary["Last Cross"].append(last_cross)
         summary["OBV Mean"].append(obv_interpretation)
@@ -851,81 +816,6 @@ def summarize_signals_detailed(signals):
 
 detailed_summary_df = summarize_signals_detailed(all_signals)
 st.dataframe(detailed_summary_df.style.hide(axis="index"))
-
-# Asset-Wise Summary
-def asset_wise_summary(signals):
-    assets = ["BTC", "SP500", "NASDAQ", "GOLD", "DXY"]
-    asset_summary = []
-
-    for asset in assets:
-        asset_signals = [s for s in signals if s["asset"] == asset]
-        if not asset_signals:
-            continue
-
-        # Calculate mean OBV
-        obv_scores = [s["weight"] for s in asset_signals if s["type"] == "OBV"]
-        obv_mean = np.mean(obv_scores) if obv_scores else "N/A"
-
-        # Last signals
-        latest_cross = next((s["date"] for s in asset_signals if s["type"] == "Golden/Death Cross"), "N/A")
-        latest_macd = next((s["date"] for s in asset_signals if s["type"] in ["Daily MACD", "Weekly MACD"]), "N/A")
-        latest_rsi = next((s["date"] for s in asset_signals if s["type"] == "RSI Signal"), "N/A")
-
-        asset_summary.append({
-            "Asset": asset,
-            "OBV Mean": obv_mean,
-            "Last Cross": latest_cross,
-            "Last MACD": latest_macd,
-            "Last RSI": latest_rsi
-        })
-
-    return pd.DataFrame(asset_summary)
-
-# Asset-Wise Signals Overview with Asset Toggler
-st.markdown("### 📊 Asset-Wise Signals Overview")
-
-asset_options = ["BTC", "SP500", "NASDAQ", "GOLD", "DXY"]
-selected_asset = st.selectbox("Select Asset for Detailed View", asset_options)
-
-def asset_detailed_view(signals, asset_key):
-    asset_signals = [s for s in signals if s["asset"] == asset_key]
-    if not asset_signals:
-        return pd.DataFrame()
-
-    detailed_summary = {
-        "Signal Type": [],
-        "Date": [],
-        "Status": []
-    }
-
-    # Last 3 Crosses
-    cross_signals = [s for s in asset_signals if s["type"] == "Golden/Death Cross"][-3:]
-    for s in cross_signals:
-        cross_type = "Golden Cross" if s["weight"] == 1 else "Death Cross"
-        detailed_summary["Signal Type"].append(cross_type)
-        detailed_summary["Date"].append(s["date"].date())
-        detailed_summary["Status"].append("Cross")
-
-    # Last 3 MACD
-    macd_signals = [s for s in asset_signals if s["type"] in ["Daily MACD", "Weekly MACD"]][-3:]
-    for s in macd_signals:
-        macd_type = "Bullish" if s["weight"] > 0 else "Bearish"
-        detailed_summary["Signal Type"].append(f"MACD {macd_type}")
-        detailed_summary["Date"].append(s["date"].date())
-        detailed_summary["Status"].append("MACD")
-
-    # Last 3 RSI
-    rsi_signals = [s for s in asset_signals if s["type"] == "RSI Signal"][-3:]
-    for s in rsi_signals:
-        rsi_type = "Overbought" if s["weight"] == 1 else "Oversold"
-        detailed_summary["Signal Type"].append(f"RSI {rsi_type}")
-        detailed_summary["Date"].append(s["date"].date())
-        detailed_summary["Status"].append("RSI")
-
-    return pd.DataFrame(detailed_summary)
-
-asset_detail_df = asset_detailed_view(all_signals, selected_asset)
-st.dataframe(asset_detail_df)
 
 # === 6️⃣ Signal Legend ===
 st.markdown("### 📚 Signal Legend")
