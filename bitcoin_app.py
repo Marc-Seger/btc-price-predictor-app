@@ -387,7 +387,7 @@ for ind in indicators:
                         line=dict(color='#FF6D00')  # Orange Dashed
                     ), row=current_row, col=1)
 
-                    # Histogram (Teal or Red)
+                    # === Histogram (Teal or Red with full opacity) ===
                     hist_vals = master_df_dashboard[hist_col]
 
                     fig.add_trace(go.Bar(
@@ -395,15 +395,24 @@ for ind in indicators:
                         y=hist_vals,
                         name=f"Histogram {macd_type}",
                         marker_color=[
-                            '#009688' if val >= 0 else '#F44336'
+                            '#00BFA5' if val >= 0 else '#F44336'  # Bright Teal / Red for better visibility
                             for val in hist_vals
                         ],
-                        opacity=0.8
+                        opacity=1.0  # Fully opaque bars for contrast even when zoomed out
                     ), row=current_row, col=1)
 
-                    #Force Y-axis to have a visible range
-                    buffer = hist_vals.abs().max() * 1.2
-                    fig.update_yaxes(title_text="MACD", row=current_row, col=1, range=[-buffer, buffer])
+                    # === Y-Axis Config for MACD subplot ===
+                    fig.update_yaxes(
+                        title_text="MACD",
+                        row=current_row, col=1,
+                        tickfont=dict(color='white'),
+                        gridcolor="rgba(255,255,255,0.1)",
+                        zeroline=True,
+                        zerolinecolor='gray',
+                        showline=True,
+                        range=None  # Let Plotly auto-scale to avoid MACD/Signal line overflow
+                    )
+
 
 # === 8️⃣ RSI Subplot ===
 if "RSI" in indicators:
