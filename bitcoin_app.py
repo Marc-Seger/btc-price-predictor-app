@@ -370,48 +370,45 @@ for ind in indicators:
                 signal_col = f'Signal_Line_{macd_type}_{prefix}'
                 hist_col = f'MACD_Histogram_{macd_type}_{prefix}'
 
-                if all(col in master_df_dashboard.columns for col in [macd_col, signal_col, hist_col]):
-                    macd_vals = master_df_dashboard[macd_col]
-                    signal_vals = master_df_dashboard[signal_col]
+                if macd_col in master_df_dashboard.columns and signal_col in master_df_dashboard.columns:
                     hist_vals = master_df_dashboard[hist_col]
 
-                    # === MACD Line (Blue)
+                    # Histogram with color-coded bars
+                    fig.add_trace(go.Bar(
+                        x=master_df_dashboard.index,
+                        y=hist_vals,
+                        name=f"Histogram {macd_type}",
+                        marker_color=[
+                            '#009688' if val >= 0 else '#F44336'
+                            for val in hist_vals
+                        ],
+                        opacity=1
+                    ), row=current_row, col=1)
+
+                    # MACD Line (blue)
                     fig.add_trace(go.Scatter(
                         x=master_df_dashboard.index,
-                        y=macd_vals,
+                        y=master_df_dashboard[macd_col],
                         name=f"MACD {macd_type}",
-                        line=dict(color='#2962FF')  # Bright blue
+                        line=dict(color='#2962FF')
                     ), row=current_row, col=1)
 
-                    # === Signal Line (Orange)
+                    # Signal Line (orange dashed)
                     fig.add_trace(go.Scatter(
                         x=master_df_dashboard.index,
-                        y=signal_vals,
+                        y=master_df_dashboard[signal_col],
                         name=f"Signal {macd_type}",
-                        line=dict(color='#FF6D00', dash='dot')  # Orange dashed
+                        line=dict(color='#FF6D00', dash='dot')
                     ), row=current_row, col=1)
 
-                    # === Histogram Bars: Positive (Teal) & Negative (Red)
-                    fig.add_trace(go.Bar(
-                        x=hist_vals[hist_vals >= 0].index,
-                        y=hist_vals[hist_vals >= 0],
-                        name=f"Histogram {macd_type} (Positive)",
-                        marker_color='#009688',
-                        opacity=1.0,
-                    ), row=current_row, col=1)
+                    # === Fixed Y-axis range for visibility ===
+                    fig.update_yaxes(
+                        title_text="MACD",
+                        range=[-3, 3],  # Adjust manually based on your data
+                        row=current_row,
+                        col=1
+                    )
 
-                    fig.add_trace(go.Bar(
-                        x=hist_vals[hist_vals < 0].index,
-                        y=hist_vals[hist_vals < 0],
-                        name=f"Histogram {macd_type} (Negative)",
-                        marker_color='#F44336',
-                        opacity=1.0,
-                    ), row=current_row, col=1)
-
-                    # === Set Y-Axis Range Dynamically to Prevent Overflow
-                    combined = pd.concat([macd_vals, signal_vals, hist_vals])
-                    buffer = combined.abs().max() * 1.2
-                    fig.update_yaxes(title_text="MACD", row=current_row, col=1, range=[-buffer, buffer])
 
 
 # === 8️⃣ RSI Subplot ===
