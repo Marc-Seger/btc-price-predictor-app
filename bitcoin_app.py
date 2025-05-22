@@ -384,20 +384,26 @@ for ind in indicators:
                         x=master_df_dashboard.index,
                         y=master_df_dashboard[signal_col],
                         name=f"Signal {macd_type}",
-                        line=dict(color='#FF6D00', dash='dot')  # Orange Dashed
+                        line=dict(color='#FF6D00')  # Orange Dashed
                     ), row=current_row, col=1)
 
-                    # Histogram (Teal)
+                    # Histogram (Teal or Red)
+                    hist_vals = master_df_dashboard[hist_col]
+
                     fig.add_trace(go.Bar(
                         x=master_df_dashboard.index,
-                        y=master_df_dashboard[hist_col],
+                        y=hist_vals,
                         name=f"Histogram {macd_type}",
                         marker_color=[
-                            '#009688' if val >= 0 else '#F44336'  # Teal for positive, Red for negative
-                            for val in master_df_dashboard[hist_col]
+                            '#009688' if val >= 0 else '#F44336'
+                            for val in hist_vals
                         ],
                         opacity=0.8
                     ), row=current_row, col=1)
+
+                    #Force Y-axis to have a visible range
+                    buffer = hist_vals.abs().max() * 1.2
+                    fig.update_yaxes(title_text="MACD", row=current_row, col=1, range=[-buffer, buffer])
 
 # === 8️⃣ RSI Subplot ===
 if "RSI" in indicators:
