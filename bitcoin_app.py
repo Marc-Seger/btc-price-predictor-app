@@ -361,40 +361,43 @@ for ind in indicators:
                 line=dict(color='blue')
             ), row=current_row, col=1)
 
-# === 7️⃣ MACD (Daily & Weekly) Subplot ===
-if "MACD_D" in indicators or "MACD_W" in indicators:
-    current_row += 1
-    for macd_type in ["D", "W"]:
-        if f"MACD_{macd_type}" in indicators:
-            macd_col = f'MACD_{macd_type}_{prefix}'
-            signal_col = f'Signal_Line_{macd_type}_{prefix}'
-            hist_col = f'MACD_Histogram_{macd_type}_{prefix}'
+    # === 7️⃣ MACD (Daily & Weekly) Subplot ===
+    if "MACD_D" in indicators or "MACD_W" in indicators:
+        current_row += 1
+        for macd_type in ["D", "W"]:
+            if f"MACD_{macd_type}" in indicators:
+                macd_col = f'MACD_{macd_type}_{prefix}'
+                signal_col = f'Signal_Line_{macd_type}_{prefix}'
+                hist_col = f'MACD_Histogram_{macd_type}_{prefix}'
 
-            if macd_col in master_df_dashboard.columns and signal_col in master_df_dashboard.columns:
-                # MACD Line
-                fig.add_trace(go.Scatter(
-                    x=master_df_dashboard.index,
-                    y=master_df_dashboard[macd_col],
-                    name=f"MACD {macd_type}",
-                    line=dict(color='purple')
-                ), row=current_row, col=1)
+                if macd_col in master_df_dashboard.columns and signal_col in master_df_dashboard.columns:
+                    # MACD Line (Blue)
+                    fig.add_trace(go.Scatter(
+                        x=master_df_dashboard.index,
+                        y=master_df_dashboard[macd_col],
+                        name=f"MACD {macd_type}",
+                        line=dict(color='#2962FF')  # Bright Blue
+                    ), row=current_row, col=1)
 
-                # Signal Line
-                fig.add_trace(go.Scatter(
-                    x=master_df_dashboard.index,
-                    y=master_df_dashboard[signal_col],
-                    name=f"Signal {macd_type}",
-                    line=dict(color='gray', dash='dot')
-                ), row=current_row, col=1)
+                    # Signal Line (Orange)
+                    fig.add_trace(go.Scatter(
+                        x=master_df_dashboard.index,
+                        y=master_df_dashboard[signal_col],
+                        name=f"Signal {macd_type}",
+                        line=dict(color='#FF6D00', dash='dot')  # Orange Dashed
+                    ), row=current_row, col=1)
 
-                # Histogram
-                fig.add_trace(go.Bar(
-                    x=master_df_dashboard.index,
-                    y=master_df_dashboard[hist_col],
-                    name=f"Histogram {macd_type}",
-                    marker_color='purple',
-                    opacity=0.5
-                ), row=current_row, col=1)
+                    # Histogram (Teal)
+                    fig.add_trace(go.Bar(
+                        x=master_df_dashboard.index,
+                        y=master_df_dashboard[hist_col],
+                        name=f"Histogram {macd_type}",
+                        marker_color=[
+                            '#009688' if val >= 0 else '#F44336'  # Teal for positive, Red for negative
+                            for val in master_df_dashboard[hist_col]
+                        ],
+                        opacity=0.8
+                    ), row=current_row, col=1)
 
 # === 8️⃣ RSI Subplot ===
 if "RSI" in indicators:
