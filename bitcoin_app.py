@@ -370,49 +370,49 @@ for ind in indicators:
                 signal_col = f'Signal_Line_{macd_type}_{prefix}'
                 hist_col = f'MACD_Histogram_{macd_type}_{prefix}'
 
-                if macd_col in master_df_dashboard.columns and signal_col in master_df_dashboard.columns:
-                    # MACD Line (Blue)
-                    fig.add_trace(go.Scatter(
-                        x=master_df_dashboard.index,
-                        y=master_df_dashboard[macd_col],
-                        name=f"MACD {macd_type}",
-                        line=dict(color='#2962FF')  # Bright Blue
-                    ), row=current_row, col=1)
-
-                    # Signal Line (Orange)
-                    fig.add_trace(go.Scatter(
-                        x=master_df_dashboard.index,
-                        y=master_df_dashboard[signal_col],
-                        name=f"Signal {macd_type}",
-                        line=dict(color='#FF6D00')  # Orange Dashed
-                    ), row=current_row, col=1)
-
-                    # === Histogram (Teal or Red with full opacity) ===
+                if all(col in master_df_dashboard.columns for col in [macd_col, signal_col, hist_col]):
+                    macd_vals = master_df_dashboard[macd_col]
+                    signal_vals = master_df_dashboard[signal_col]
                     hist_vals = master_df_dashboard[hist_col]
 
-                    fig.add_trace(go.Bar(
+                    # === MACD Line (Blue)
+                    fig.add_trace(go.Scatter(
                         x=master_df_dashboard.index,
-                        y=hist_vals,
-                        name=f"Histogram {macd_type}",
-                        marker_color=[
-                            '#00BFA5' if val >= 0 else '#F44336'
-                            for val in hist_vals
-                        ],
-                        opacity=1.0  # Full opacity for better visibility
+                        y=macd_vals,
+                        name=f"MACD {macd_type}",
+                        line=dict(color='#2962FF')  # Bright blue
                     ), row=current_row, col=1)
 
-                    # === Y-Axis Config: Zoom based on histogram values only ===
-                    hist_buffer = hist_vals.abs().max() * 1.4  # Slightly larger buffer
-                    fig.update_yaxes(
-                        title_text="MACD",
-                        row=current_row, col=1,
-                        range=[-hist_buffer, hist_buffer],
-                        tickfont=dict(color='white'),
-                        gridcolor="rgba(255,255,255,0.1)",
-                        zeroline=True,
-                        zerolinecolor='gray',
-                        showline=True
-                    )
+                    # === Signal Line (Orange)
+                    fig.add_trace(go.Scatter(
+                        x=master_df_dashboard.index,
+                        y=signal_vals,
+                        name=f"Signal {macd_type}",
+                        line=dict(color='#FF6D00', dash='dot')  # Orange dashed
+                    ), row=current_row, col=1)
+
+                    # === Histogram Bars: Positive (Teal) & Negative (Red)
+                    fig.add_trace(go.Bar(
+                        x=hist_vals[hist_vals >= 0].index,
+                        y=hist_vals[hist_vals >= 0],
+                        name=f"Histogram {macd_type} (Positive)",
+                        marker_color='#009688',
+                        opacity=1.0,
+                    ), row=current_row, col=1)
+
+                    fig.add_trace(go.Bar(
+                        x=hist_vals[hist_vals < 0].index,
+                        y=hist_vals[hist_vals < 0],
+                        name=f"Histogram {macd_type} (Negative)",
+                        marker_color='#F44336',
+                        opacity=1.0,
+                    ), row=current_row, col=1)
+
+                    # === Set Y-Axis Range Dynamically to Prevent Overflow
+                    combined = pd.concat([macd_vals, signal_vals, hist_vals])
+                    buffer = combined.abs().max() * 1.2
+                    fig.update_yaxes(title_text="MACD", row=current_row, col=1, range=[-buffer, buffer])
+
 
 # === 8️⃣ RSI Subplot ===
 if "RSI" in indicators:
