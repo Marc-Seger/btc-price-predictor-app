@@ -370,44 +370,60 @@ for ind in indicators:
                 signal_col = f'Signal_Line_{macd_type}_{prefix}'
                 hist_col = f'MACD_Histogram_{macd_type}_{prefix}'
 
-                if macd_col in master_df_dashboard.columns and signal_col in master_df_dashboard.columns:
+                if all(col in master_df_dashboard.columns for col in [macd_col, signal_col, hist_col]):
                     hist_vals = master_df_dashboard[hist_col]
 
-                    # Histogram with color-coded bars
-                    fig.add_trace(go.Bar(
-                        x=master_df_dashboard.index,
-                        y=hist_vals,
-                        name=f"Histogram {macd_type}",
-                        marker_color=[
-                            '#009688' if val >= 0 else '#F44336'
-                            for val in hist_vals
-                        ],
-                        opacity=1
-                    ), row=current_row, col=1)
-
-                    # MACD Line (blue)
+                    # MACD Line (Left Y-axis)
                     fig.add_trace(go.Scatter(
                         x=master_df_dashboard.index,
                         y=master_df_dashboard[macd_col],
                         name=f"MACD {macd_type}",
-                        line=dict(color='#2962FF')
+                        line=dict(color='#2962FF'),
+                        yaxis='y'  # Primary Y-axis (default)
                     ), row=current_row, col=1)
 
-                    # Signal Line (orange dashed)
+                    # Signal Line (Left Y-axis)
                     fig.add_trace(go.Scatter(
                         x=master_df_dashboard.index,
                         y=master_df_dashboard[signal_col],
                         name=f"Signal {macd_type}",
-                        line=dict(color='#FF6D00', dash='dot')
+                        line=dict(color='#FF6D00', dash='dot'),
+                        yaxis='y'
                     ), row=current_row, col=1)
 
-                    # === Fixed Y-axis range for visibility ===
+                    # Histogram Bars (Right Y-axis)
+                    fig.add_trace(go.Bar(
+                        x=master_df_dashboard.index,
+                        y=hist_vals,
+                        name=f"Histogram {macd_type} (Positive)",
+                        marker_color=[
+                            '#009688' if val >= 0 else '#F44336'
+                            for val in hist_vals
+                        ],
+                        opacity=1.0,
+                        yaxis='y2'
+                    ), row=current_row, col=1)
+
+                    # Y-axis for MACD + Signal Line
                     fig.update_yaxes(
                         title_text="MACD",
-                        range=[-3, 3],  # Adjust manually based on your data
-                        row=current_row,
-                        col=1
+                        range=[-5000, 7500],
+                        row=current_row, col=1,
+                        showgrid=True,
+                        zeroline=True
                     )
+
+                    # Secondary Y-axis for Histogram
+                    fig.update_layout({
+                        f'yaxis{current_row if current_row > 1 else ""}2': dict(
+                            overlaying=f'y{current_row}',
+                            side='right',
+                            range=[-300, 300],
+                            showgrid=False,
+                            zeroline=True
+                        )
+                    })
+
 
 
 
