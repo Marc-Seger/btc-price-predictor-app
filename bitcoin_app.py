@@ -395,24 +395,24 @@ for ind in indicators:
                         y=hist_vals,
                         name=f"Histogram {macd_type}",
                         marker_color=[
-                            '#00BFA5' if val >= 0 else '#F44336'  # Bright Teal / Red for better visibility
+                            '#00BFA5' if val >= 0 else '#F44336'
                             for val in hist_vals
                         ],
-                        opacity=1.0  # Fully opaque bars for contrast even when zoomed out
+                        opacity=1.0  # Full opacity for better visibility
                     ), row=current_row, col=1)
 
-                    # === Y-Axis Config for MACD subplot ===
+                    # === Y-Axis Config: Zoom based on histogram values only ===
+                    hist_buffer = hist_vals.abs().max() * 1.4  # Slightly larger buffer
                     fig.update_yaxes(
                         title_text="MACD",
                         row=current_row, col=1,
+                        range=[-hist_buffer, hist_buffer],
                         tickfont=dict(color='white'),
                         gridcolor="rgba(255,255,255,0.1)",
                         zeroline=True,
                         zerolinecolor='gray',
-                        showline=True,
-                        range=None  # Let Plotly auto-scale to avoid MACD/Signal line overflow
+                        showline=True
                     )
-
 
 # === 8️⃣ RSI Subplot ===
 if "RSI" in indicators:
