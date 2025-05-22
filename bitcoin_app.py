@@ -93,19 +93,16 @@ else:
 # --- Synchronized Volume Spike & % Change ---
 vol_series = master_df_dashboard['Volume_BTC'].dropna()
 
-# Use last and second-to-last complete rows
-last_idx = vol_series.index[-1]
-prev_idx = vol_series.index[-2]
-
-latest_volume = vol_series.loc[last_idx]
-previous_volume = vol_series.loc[prev_idx]
+# Use only completed daily data
+latest_volume = vol_series.iloc[-2]   # Yesterday
+previous_volume = vol_series.iloc[-3] # Day before
 
 # Calculate % change
 vol_change = ((latest_volume - previous_volume) / previous_volume) * 100 if previous_volume != 0 else 0
-vol_change_text = f"{vol_change:+.1f}% vs 1D"
+vol_change_text = f"{vol_change:+.1f}% vs prev day"
 
-# Get spike value from the same row
-volume_spike = master_df_dashboard.loc[last_idx, 'High_Volume_BTC']
+# Use spike flag from yesterday
+volume_spike = master_df_dashboard.iloc[-2]['High_Volume_BTC']
 spike_status = "Yes" if volume_spike else "No"
 spike_color = "green" if volume_spike else "white"
 
@@ -201,7 +198,10 @@ col4.markdown(f"""
         text-align: center;
         height: 100%;
     '>
-        <div style='font-weight:600; font-size:1.1rem;'>24h Volume Spike</div>
+        <div style='font-weight:600; font-size:1.1rem;'>
+            24h Volume Spike 
+            <span title="Based on completed data: compares yesterday’s volume to the day before. Today's partial data is excluded.">ℹ️</span>
+        </div>
         <div style='font-size:2rem; font-weight:700; margin:0.2rem 0; color:{spike_color};'>
             {spike_status}
         </div>
