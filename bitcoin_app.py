@@ -200,7 +200,7 @@ col4.markdown(f"""
     '>
         <div style='font-weight:600; font-size:1.1rem;'>
             24h Volume Spike 
-            <span title="Based on completed data: compares yesterday’s volume to the day before. Today's partial data is excluded.">ℹ️</span>
+            <span title="Flags a spike if yesterday’s volume is in the top 10% (≥ 90th percentile) of recent data. Based on completed daily candles.">ℹ️</span>
         </div>
         <div style='font-size:2rem; font-weight:700; margin:0.2rem 0; color:{spike_color};'>
             {spike_status}
