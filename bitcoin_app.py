@@ -239,8 +239,8 @@ with col3:
             "SMA_20", "SMA_50", "SMA_200", 
             "EMA_9", "EMA_20", "EMA_50", "EMA_200", 
             # MACD (Daily and Weekly)
-            "MACD_D", "Signal_Line_D", "MACD_Histogram_D",
-            "MACD_W", "Signal_Line_W", "MACD_Histogram_W",
+            "MACD_D",
+            "MACD_W",
             # RSI
             "RSI",
             # Bollinger Bands
