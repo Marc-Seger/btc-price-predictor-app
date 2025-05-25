@@ -445,17 +445,29 @@ if "OBV" in indicators:
     current_row += 1
     obv_col = f'OBV_{prefix}'
     if obv_col in master_df_dashboard.columns:
-        # Compute OBV % change (cumulative)
-        obv_pct = master_df_dashboard[obv_col].pct_change().fillna(0).cumsum()
-        
-        fig.add_trace(go.Scatter(
-            x=master_df_dashboard.index,
-            y=obv_pct,
-            name="OBV (% Change)",
-            line=dict(color='lime')
-        ), row=current_row, col=1)
+        obv_series = master_df_dashboard[obv_col].copy()
 
-        fig.update_yaxes(title_text="OBV (Pct)", row=current_row, col=1)
+        # Check for valid variation in OBV
+        if obv_series.nunique() > 1 and not obv_series.isnull().all():
+            obv_min = obv_series.min()
+            obv_max = obv_series.max()
+            obv_norm = (obv_series - obv_min) / (obv_max - obv_min)
+
+            fig.add_trace(go.Scatter(
+                x=master_df_dashboard.index,
+                y=obv_norm,
+                name="OBV (Normalized)",
+                line=dict(color='lime')
+            ), row=current_row, col=1)
+
+            fig.update_yaxes(title_text="OBV (0–1)", row=current_row, col=1)
+        else:
+            fig.add_annotation(
+                text="⚠️ OBV constant or missing — unable to normalize.",
+                xref="paper", yref="paper",
+                x=0.5, y=1.0, showarrow=False,
+                row=current_row, col=1
+            )
 
 # === 🔟 Stochastic Subplot ===
 if "Stochastic" in indicators:
