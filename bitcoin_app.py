@@ -418,7 +418,7 @@ for ind in indicators:
                         f'yaxis{current_row if current_row > 1 else ""}2': dict(
                             overlaying=f'y{current_row}',
                             side='right',
-                            range=[-200, 200],
+                            range=[-800, 800],
                             showgrid=False,
                             zeroline=True
                         )
