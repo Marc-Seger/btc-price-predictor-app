@@ -445,12 +445,17 @@ if "OBV" in indicators:
     current_row += 1
     obv_col = f'OBV_{prefix}'
     if obv_col in master_df_dashboard.columns:
+        # Compute OBV % change (cumulative)
+        obv_pct = master_df_dashboard[obv_col].pct_change().fillna(0).cumsum()
+        
         fig.add_trace(go.Scatter(
             x=master_df_dashboard.index,
-            y=master_df_dashboard[obv_col],
-            name="OBV",
-            line=dict(color='green')
+            y=obv_pct,
+            name="OBV (% Change)",
+            line=dict(color='lime')
         ), row=current_row, col=1)
+
+        fig.update_yaxes(title_text="OBV (Pct)", row=current_row, col=1)
 
 # === 🔟 Stochastic Subplot ===
 if "Stochastic" in indicators:
