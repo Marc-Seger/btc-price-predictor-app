@@ -445,16 +445,16 @@ if "OBV" in indicators:
     current_row += 1
     obv_col = f'OBV_{prefix}'
     if obv_col in master_df_dashboard.columns:
+        # Use same index and resampling as df_plot
         obv_series = master_df_dashboard[obv_col].copy()
+        obv_series = obv_series.loc[df_plot.index.intersection(obv_series.index)]
 
-        # Check for valid variation in OBV
+        # Normalize only if enough variation
         if obv_series.nunique() > 1 and not obv_series.isnull().all():
-            obv_min = obv_series.min()
-            obv_max = obv_series.max()
-            obv_norm = (obv_series - obv_min) / (obv_max - obv_min)
+            obv_norm = (obv_series - obv_series.min()) / (obv_series.max() - obv_series.min())
 
             fig.add_trace(go.Scatter(
-                x=master_df_dashboard.index,
+                x=obv_series.index,
                 y=obv_norm,
                 name="OBV (Normalized)",
                 line=dict(color='lime')
@@ -463,7 +463,7 @@ if "OBV" in indicators:
             fig.update_yaxes(title_text="OBV (0–1)", row=current_row, col=1)
         else:
             fig.add_annotation(
-                text="⚠️ OBV constant or missing — unable to normalize.",
+                text="⚠️ OBV flat or missing after resampling.",
                 xref="paper", yref="paper",
                 x=0.5, y=1.0, showarrow=False,
                 row=current_row, col=1
