@@ -291,7 +291,7 @@ if "Stochastic" in indicators:
     rows += 1
 
 fig = make_subplots(rows=rows, shared_xaxes=True, vertical_spacing=0.03, 
-                    row_heights=[0.5] + [0.12] * (rows - 1))
+                    row_heights=[0.7] + [0.2] * (rows - 1))
 
 current_row = 1
 
