@@ -250,7 +250,7 @@ with col3:
             # VWAP
             "VWAP",
             # OBV
-            "OBV_YF", "OBV_AV"
+            "OBV"
         ],
         default=["SMA_50", "SMA_200"],  # Default selection
         key="indicator_select"
@@ -285,7 +285,7 @@ if "MACD_D" in indicators or "MACD_W" in indicators:
     rows += 1
 if "RSI" in indicators:
     rows += 1
-if "OBV_YF" in indicators or "OBV_AV" in indicators:
+if "OBV" in indicators:
     rows += 1
 if "Stochastic" in indicators:
     rows += 1
@@ -440,42 +440,47 @@ if "RSI" in indicators:
         ), row=current_row, col=1)
         fig.update_yaxes(title_text="RSI", row=current_row, col=1, range=[0, 100])
 
-# === 9️⃣ OBV Subplot (Dual for BTC, Single for Others) ===
-if "OBV_YF" in indicators or "OBV_AV" in indicators:
+# === 9️⃣ OBV Subplot (Unified) ===
+if "OBV" in indicators:
     current_row += 1
 
     if prefix == "BTC":
-        obv_map = {
-            "OBV_YF": ("OBV_YF_BTC", "OBV YF (Pre-Cutoff)"),
-            "OBV_AV": ("OBV_AV_BTC", "OBV AV (Post-Cutoff)")
-        }
+        # Combine OBV_YF_BTC and OBV_AV_BTC into a stitched series
+        obv_parts = []
+        for part_col in ["OBV_YF_BTC", "OBV_AV_BTC"]:
+            if part_col in master_df_dashboard.columns:
+                obv_parts.append(master_df_dashboard[part_col])
+
+        if obv_parts:
+            obv_combined = pd.concat(obv_parts).sort_index()
+            obv_combined = obv_combined[~obv_combined.index.duplicated(keep="last")]
+        else:
+            obv_combined = pd.Series(dtype=float)
+
     else:
-        obv_map = {
-            "OBV_AV": (f"OBV_{prefix}", "OBV")
-        }
+        col_name = f"OBV_{prefix}"
+        obv_combined = master_df_dashboard[col_name] if col_name in master_df_dashboard.columns else pd.Series(dtype=float)
 
-    for obv_key, (col_name, label) in obv_map.items():
-        if obv_key in indicators and col_name in master_df_dashboard.columns:
-            obv_series = master_df_dashboard[col_name].copy()
-            obv_series = obv_series.loc[df_plot.index.intersection(obv_series.index)]
+    obv_combined = obv_combined.loc[df_plot.index.intersection(obv_combined.index)]
 
-            if obv_series.nunique() > 1 and not obv_series.isnull().all():
-                obv_norm = (obv_series - obv_series.min()) / (obv_series.max() - obv_series.min())
-                fig.add_trace(go.Scatter(
-                    x=obv_series.index,
-                    y=obv_norm,
-                    name=label,
-                    line=dict(width=2)
-                ), row=current_row, col=1)
-            else:
-                fig.add_annotation(
-                    text=f"⚠️ {label} flat or missing.",
-                    xref="paper", yref="paper",
-                    x=0.5, y=1.0, showarrow=False,
-                    row=current_row, col=1
-                )
+    if obv_combined.nunique() > 1 and not obv_combined.isnull().all():
+        obv_norm = (obv_combined - obv_combined.min()) / (obv_combined.max() - obv_combined.min())
+        fig.add_trace(go.Scatter(
+            x=obv_combined.index,
+            y=obv_norm,
+            name="OBV",
+            line=dict(width=2)
+        ), row=current_row, col=1)
+    else:
+        fig.add_annotation(
+            text="⚠️ OBV flat or missing.",
+            xref="paper", yref="paper",
+            x=0.5, y=1.0, showarrow=False,
+            row=current_row, col=1
+        )
 
     fig.update_yaxes(title_text="OBV (0–1)", row=current_row, col=1)
+
 
 # === 🔟 Stochastic Subplot ===
 if "Stochastic" in indicators:
