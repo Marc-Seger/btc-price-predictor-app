@@ -250,7 +250,7 @@ with col3:
             # VWAP
             "VWAP",
             # OBV
-            "OBV"
+            "OBV_YF", "OBV_AV"
         ],
         default=["SMA_50", "SMA_200"],  # Default selection
         key="indicator_select"
@@ -441,25 +441,26 @@ if "RSI" in indicators:
         fig.update_yaxes(title_text="RSI", row=current_row, col=1, range=[0, 100])
 
 # === 9️⃣ OBV Subplot (Dual for BTC, Single for Others) ===
-if "OBV" in indicators:
+if "OBV_YF" in indicators or "OBV_AV" in indicators:
     current_row += 1
 
     if prefix == "BTC":
-        obv_cols = {
-            "OBV_YF_BTC": "OBV YF (Pre-Cutoff)",
-            "OBV_AV_BTC": "OBV AV (Post-Cutoff)"
+        obv_map = {
+            "OBV_YF": ("OBV_YF_BTC", "OBV YF (Pre-Cutoff)"),
+            "OBV_AV": ("OBV_AV_BTC", "OBV AV (Post-Cutoff)")
         }
     else:
-        obv_cols = {f"OBV_{prefix}": "OBV"}
+        obv_map = {
+            "OBV_AV": (f"OBV_{prefix}", "OBV")
+        }
 
-    for col_name, label in obv_cols.items():
-        if col_name in master_df_dashboard.columns:
+    for obv_key, (col_name, label) in obv_map.items():
+        if obv_key in indicators and col_name in master_df_dashboard.columns:
             obv_series = master_df_dashboard[col_name].copy()
             obv_series = obv_series.loc[df_plot.index.intersection(obv_series.index)]
 
             if obv_series.nunique() > 1 and not obv_series.isnull().all():
                 obv_norm = (obv_series - obv_series.min()) / (obv_series.max() - obv_series.min())
-
                 fig.add_trace(go.Scatter(
                     x=obv_series.index,
                     y=obv_norm,
