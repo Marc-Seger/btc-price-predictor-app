@@ -440,34 +440,41 @@ if "RSI" in indicators:
         ), row=current_row, col=1)
         fig.update_yaxes(title_text="RSI", row=current_row, col=1, range=[0, 100])
 
-# === 9️⃣ OBV Subplot ===
+# === 9️⃣ OBV Subplot (Dual for BTC, Single for Others) ===
 if "OBV" in indicators:
     current_row += 1
-    obv_col = f'OBV_{prefix}'
-    if obv_col in master_df_dashboard.columns:
-        # Use same index and resampling as df_plot
-        obv_series = master_df_dashboard[obv_col].copy()
-        obv_series = obv_series.loc[df_plot.index.intersection(obv_series.index)]
 
-        # Normalize only if enough variation
-        if obv_series.nunique() > 1 and not obv_series.isnull().all():
-            obv_norm = (obv_series - obv_series.min()) / (obv_series.max() - obv_series.min())
+    if prefix == "BTC":
+        obv_cols = {
+            "OBV_YF_BTC": "OBV YF (Pre-Cutoff)",
+            "OBV_AV_BTC": "OBV AV (Post-Cutoff)"
+        }
+    else:
+        obv_cols = {f"OBV_{prefix}": "OBV"}
 
-            fig.add_trace(go.Scatter(
-                x=obv_series.index,
-                y=obv_norm,
-                name="OBV (Normalized)",
-                line=dict(color='lime')
-            ), row=current_row, col=1)
+    for col_name, label in obv_cols.items():
+        if col_name in master_df_dashboard.columns:
+            obv_series = master_df_dashboard[col_name].copy()
+            obv_series = obv_series.loc[df_plot.index.intersection(obv_series.index)]
 
-            fig.update_yaxes(title_text="OBV (0–1)", row=current_row, col=1)
-        else:
-            fig.add_annotation(
-                text="⚠️ OBV flat or missing after resampling.",
-                xref="paper", yref="paper",
-                x=0.5, y=1.0, showarrow=False,
-                row=current_row, col=1
-            )
+            if obv_series.nunique() > 1 and not obv_series.isnull().all():
+                obv_norm = (obv_series - obv_series.min()) / (obv_series.max() - obv_series.min())
+
+                fig.add_trace(go.Scatter(
+                    x=obv_series.index,
+                    y=obv_norm,
+                    name=label,
+                    line=dict(width=2)
+                ), row=current_row, col=1)
+            else:
+                fig.add_annotation(
+                    text=f"⚠️ {label} flat or missing.",
+                    xref="paper", yref="paper",
+                    x=0.5, y=1.0, showarrow=False,
+                    row=current_row, col=1
+                )
+
+    fig.update_yaxes(title_text="OBV (0–1)", row=current_row, col=1)
 
 # === 🔟 Stochastic Subplot ===
 if "Stochastic" in indicators:
@@ -667,14 +674,19 @@ def extract_signals(df, asset_key, selected_days):
                     signals.append({"type": "RSI Signal", "date": date, "weight": 1, "asset": asset_key})
 
     # OBV - Daily Signal
-    obv_col = f'OBV_{prefix}'
-    if obv_col in df.columns:
-        for date, value in df[obv_col].diff().dropna().items():
-            if date >= start_date:
-                weight = 1 if value > 0 else -1
-                signals.append({"type": "OBV", "date": date, "weight": weight, "asset": asset_key})
+    if prefix == "BTC":
+        obv_cols = ["OBV_YF_BTC", "OBV_AV_BTC"]
+    else:
+        obv_cols = [f"OBV_{prefix}"]
 
-    return signals
+    for obv_col in obv_cols:
+        if obv_col in df.columns:
+            for date, value in df[obv_col].diff().dropna().items():
+                if date >= start_date:
+                    weight = 1 if value > 0 else -1
+                    signals.append({"type": "OBV", "date": date, "weight": weight, "asset": asset_key})
+            break  # Stop after first available OBV source
+
 
 
 # Collect signals for each asset
@@ -800,6 +812,20 @@ st.markdown("---")
 
 # === 5️⃣ Technical Signals Summary ===
 
+st.markdown("""
+<div style='display: flex; align-items: center; font-size: 1rem; margin-bottom: 10px;'>
+    <strong>ℹ️ OBV Tooltip:</strong>
+    <span style='margin-left: 10px;'>
+        OBV is calculated in two parts due to volume source differences:
+        <ul style='margin-top: 4px; margin-bottom: 0;'>
+            <li><strong>OBV_YF_BTC</strong>: before June 11, 2024 (Yahoo Finance)</li>
+            <li><strong>OBV_AV_BTC</strong>: after June 11, 2024 (Alpha Vantage)</li>
+        </ul>
+        The summary uses the latest available OBV values to determine volume flow direction (accumulation/distribution).
+    </span>
+</div>
+""", unsafe_allow_html=True)
+
 def interpret_obv(obv_mean):
     """Translate OBV mean to descriptive text."""
     if obv_mean > 0.2:
@@ -832,24 +858,31 @@ def summarize_signals_detailed(signals):
             continue
 
         # OBV Mean Interpretation
-        obv_col = f"OBV_{prefix}"
         obv_interpretation = "N/A"
-        if obv_col in asset_df.columns:
-            obv_diff = asset_df[obv_col].diff()
-            # Calculate 7-day rolling sum to avoid excessive sensitivity
-            obv_rolling = obv_diff.rolling(window=7).sum().dropna()
-            last_obv_signal = obv_rolling.iloc[-1]
 
-            if last_obv_signal > 0:
-                obv_interpretation = "Accumulation"
-            elif last_obv_signal < 0:
-                obv_interpretation = "Distribution"
+        if prefix == "BTC":
+            obv_candidates = ["OBV_AV_BTC", "OBV_YF_BTC"]
+        else:
+            obv_candidates = [f"OBV_{prefix}"]
 
-        # Last Cross (Golden/Death) - Track the latest event, regardless of type
+        for obv_col in obv_candidates:
+            if obv_col in asset_df.columns:
+                obv_diff = asset_df[obv_col].diff()
+                obv_rolling = obv_diff.rolling(window=7).sum().dropna()
+                if not obv_rolling.empty:
+                    last_obv_signal = obv_rolling.iloc[-1]
+                    if last_obv_signal > 0:
+                        obv_interpretation = "Accumulation"
+                    elif last_obv_signal < 0:
+                        obv_interpretation = "Distribution"
+                    else:
+                        obv_interpretation = "Neutral"
+                    break
+
+        # Last Cross
         last_cross = "N/A"
         cross_events = []
-
-        for cross_type, col in [("Golden Cross", f"Golden_Cross_Event_{prefix}"), 
+        for cross_type, col in [("Golden Cross", f"Golden_Cross_Event_{prefix}"),
                                 ("Death Cross", f"Death_Cross_Event_{prefix}")]:
             if col in asset_df.columns:
                 event_dates = asset_df[asset_df[col] == 1].index
@@ -857,27 +890,19 @@ def summarize_signals_detailed(signals):
                     cross_events.append((cross_type, event_dates[-1]))
 
         if cross_events:
-            # Sort by date to get the latest event
             cross_events.sort(key=lambda x: x[1], reverse=True)
             last_cross = f"{cross_events[0][0]} on {cross_events[0][1].date()}"
 
-        # Last MACD Daily & Weekly
+        # MACD Daily
         last_macd_daily = "N/A"
-        last_macd_weekly = "N/A"
-
-        # Daily MACD
         macd_col_d = f"MACD_D_{prefix}"
         signal_col_d = f"Signal_Line_D_{prefix}"
         if macd_col_d in asset_df.columns and signal_col_d in asset_df.columns:
             macd_series_d = asset_df[macd_col_d]
             signal_series_d = asset_df[signal_col_d]
-            
-            # Detect crossover events
             bullish_cross_d = (macd_series_d.shift(1) < signal_series_d.shift(1)) & (macd_series_d > signal_series_d)
             bearish_cross_d = (macd_series_d.shift(1) > signal_series_d.shift(1)) & (macd_series_d < signal_series_d)
-            
             cross_dates_d = macd_series_d[bullish_cross_d | bearish_cross_d].index.tolist()
-
             if cross_dates_d:
                 last_date_d = cross_dates_d[-1]
                 last_macd_value = macd_series_d.loc[last_date_d]
@@ -885,19 +910,16 @@ def summarize_signals_detailed(signals):
                 macd_type_d = "Bullish" if last_macd_value > last_signal_value else "Bearish"
                 last_macd_daily = f"{macd_type_d} Daily MACD Crossover on {last_date_d.date()}"
 
-        # Weekly MACD
+        # MACD Weekly
+        last_macd_weekly = "N/A"
         macd_col_w = f"MACD_W_{prefix}"
         signal_col_w = f"Signal_Line_W_{prefix}"
         if macd_col_w in asset_df.columns and signal_col_w in asset_df.columns:
             macd_series_w = asset_df[macd_col_w]
             signal_series_w = asset_df[signal_col_w]
-
-            # Detect crossover events
             bullish_cross_w = (macd_series_w.shift(1) < signal_series_w.shift(1)) & (macd_series_w > signal_series_w)
             bearish_cross_w = (macd_series_w.shift(1) > signal_series_w.shift(1)) & (macd_series_w < signal_series_w)
-
             cross_dates_w = macd_series_w[bullish_cross_w | bearish_cross_w].index.tolist()
-
             if cross_dates_w:
                 last_date_w = cross_dates_w[-1]
                 last_macd_value_w = macd_series_w.loc[last_date_w]
@@ -905,7 +927,7 @@ def summarize_signals_detailed(signals):
                 macd_type_w = "Bullish" if last_macd_value_w > last_signal_value_w else "Bearish"
                 last_macd_weekly = f"{macd_type_w} Weekly MACD Crossover on {last_date_w.date()}"
 
-        # RSI Status
+        # RSI
         rsi_status = "N/A"
         rsi_overbought_col = f"RSI_Overbought_{prefix}"
         rsi_oversold_col = f"RSI_Oversold_{prefix}"
@@ -920,7 +942,6 @@ def summarize_signals_detailed(signals):
         else:
             last_oversold_date = None
 
-        # Determine the most recent RSI event
         if last_overbought_date and last_oversold_date:
             rsi_status = "Overbought" if last_overbought_date > last_oversold_date else "Oversold"
         elif last_overbought_date:
@@ -928,7 +949,6 @@ def summarize_signals_detailed(signals):
         elif last_oversold_date:
             rsi_status = "Oversold"
 
-        # Update summary
         summary["Asset"].append(asset)
         summary["Last Cross"].append(last_cross)
         summary["OBV Mean"].append(obv_interpretation)
@@ -938,8 +958,12 @@ def summarize_signals_detailed(signals):
 
     return pd.DataFrame(summary)
 
+
 # Generate the DataFrame
 detailed_summary_df = summarize_signals_detailed(all_signals)
+
+# Add legend title
+st.markdown("### 📋 Technical Signal Summary Table")
 st.dataframe(detailed_summary_df.style.hide(axis="index"))
 
 # === 6️⃣ Signal Legend ===
