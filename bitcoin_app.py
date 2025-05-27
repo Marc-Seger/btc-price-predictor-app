@@ -285,7 +285,7 @@ if "MACD_D" in indicators or "MACD_W" in indicators:
     rows += 1
 if "RSI" in indicators:
     rows += 1
-if "OBV" in indicators:
+if "OBV_YF" in indicators or "OBV_AV" in indicators:
     rows += 1
 if "Stochastic" in indicators:
     rows += 1
